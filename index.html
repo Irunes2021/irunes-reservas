@@ -1030,6 +1030,8 @@ function renderMisReservas(){
     const mesaLabel=group.length>1?'Mesas '+mesas:'Mesa '+mesas;
     const totalComs=group[0].comensales; // All mesas store same total
     const ids=group.map(r=>r.id);
+    const gkey='g'+group[0].id.replace(/-/g,'').slice(0,8);
+    _reservaGroups[gkey]=ids;
     return '<div class="reserva-item">'+
       '<div class="reserva-date-box"><div class="rday">'+d.getDate()+'</div><div class="rmonth">'+MESES_C[d.getMonth()]+'</div></div>'+
       '<div class="reserva-info">'+
@@ -1038,17 +1040,21 @@ function renderMisReservas(){
       (first.tel?'<div class="reserva-meta">📞 '+first.tel+'</div>':'')+
       (first.obs?'<div class="reserva-meta">📝 '+first.obs+'</div>':'')+
       '</div>'+
-      '<button class="btn-cancelar" onclick="cancelResGroup('+JSON.stringify(ids)+')">Cancelar</button>'+
+      '<button class="btn-cancelar" data-gkey="'+gkey+'" onclick="doCancel(this)">Cancelar</button>'+
       '</div>';
   }).join('');
 }
 
-async function cancelResGroup(ids){
+async function doCancel(el){
+  const gkey=el.dataset.gkey;
+  const ids=_reservaGroups[gkey]||[];
+  if(!ids.length)return;
   if(!confirm('¿Cancelar esta reserva?'))return;
   for(const id of ids){
     await deleteReserva(id);
     reservas=reservas.filter(r=>r.id!==id);
   }
+  delete _reservaGroups[gkey];
   renderMisReservas();renderFloor();renderStatus();renderCalGrid();showToast('Reserva cancelada');
 }
 
@@ -1205,7 +1211,7 @@ function switchTab(tab){
 }
 
 // ── KIOSK MODE ─────────────────────────────────────────────
-let kioskChannel=null, kioskDate=new Date();
+let kioskChannel=null, kioskDate=new Date(), _reservaGroups={};
 
 function enterKiosk(){kioskDate=new Date();
   // Copy logo into kiosk
