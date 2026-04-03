@@ -318,6 +318,7 @@
           <button onclick="changeComs(-1)">−</button>
           <div><div class="comensales-num" id="f-coms">8</div><div class="comensales-label">personas</div></div>
           <button onclick="changeComs(1)">+</button>
+          <span id="f-coms-max" style="font-size:.7rem;color:var(--text-muted);margin-left:.25rem">máx. 10</span>
         </div>
       </div>
       <div class="form-row"><label>Observaciones (opcional)</label><input type="text" id="f-obs" placeholder="Alergias, ocasión especial…"></div>
@@ -601,6 +602,7 @@ const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','
 const MESES_C=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const TL={comida:'Comida 🍽️',merienda:'Merienda ☕',cena:'Cena 🌙'};
 const COL={libre:'#27AE60',occupied:'#C0392B',mia:'#C9A84C'};
+const MESA_MAX={1:9,2:9,3:9,4:11};
 const FILL={libre:'#D4A83C',occupied:'#B03020',mia:'#A88830'};
 
 // ── ESTADO ───────────────────────────────────────────
@@ -796,15 +798,18 @@ function updateReservaForm(){
     document.getElementById('reserva-form').classList.remove('visible');
     return;
   }
-  coms=8;
-  document.getElementById('f-coms').textContent=8;
+  const maxComs=selMesas.reduce((a,m)=>a+MESA_MAX[m],0);
+  const defComs=selMesas.reduce((a,m)=>a+Math.min(8,MESA_MAX[m]),0);
+  if(coms>maxComs||coms<1) coms=defComs;
+  document.getElementById('f-coms').textContent=coms;
+  document.getElementById('f-coms-max').textContent='máx. '+maxComs;
   const mesasLabel = selMesas.length===1 ? 'Mesa '+selMesas[0] : 'Mesas '+selMesas.join(' + ');
   document.getElementById('form-title').textContent=mesasLabel+' · '+TL[cTurno];
   document.getElementById('reserva-form').classList.add('visible');
   setTimeout(()=>document.getElementById('reserva-form').scrollIntoView({behavior:'smooth',block:'nearest'}),50);
 }
-function changeComs(d){coms=Math.max(1,Math.min(10,coms+d));document.getElementById('f-coms').textContent=coms;}
-function changeAdminComs(d){adminComs=Math.max(1,Math.min(10,adminComs+d));document.getElementById('ac-coms').textContent=adminComs;}
+function changeComs(d){const maxComs=selMesas.reduce((a,m)=>a+MESA_MAX[m],0);coms=Math.max(1,Math.min(maxComs,coms+d));document.getElementById('f-coms').textContent=coms;}
+function changeAdminComs(d){const acMesa=parseInt(document.getElementById('ac-mesa').value);const acMax=MESA_MAX[acMesa]||11;adminComs=Math.max(1,Math.min(acMax,adminComs+d));document.getElementById('ac-coms').textContent=adminComs;}
 
 function renderStatus(){
   const f=fmt(cDate);
@@ -834,7 +839,7 @@ function openConfirm(){
     '<div class="summary-row"><span>'+( selMesas.length===1?'Mesa':'Mesas')+'</span><span>'+mesasLabel+'</span></div>'+
     '<div class="summary-row"><span>Fecha</span><span>'+fStr+'</span></div>'+
     '<div class="summary-row"><span>Turno</span><span>'+TL[cTurno]+'</span></div>'+
-    '<div class="summary-row"><span>Comensales por mesa</span><span>'+coms+' personas</span></div>'+
+    '<div class="summary-row"><span>Comensales</span><span>'+coms+' personas</span></div>'+
     '<div class="summary-row"><span>Teléfono</span><span>'+tel+'</span></div>'+
     (obs?'<div class="summary-row"><span>Observaciones</span><span>'+obs+'</span></div>':'');
   document.getElementById('confirm-modal').classList.add('show');
@@ -847,8 +852,9 @@ async function doReserva(){
   const tel=document.getElementById('f-tel').value;
   const obs=document.getElementById('f-obs').value;
   // Save one reservation per selected mesa
-  for(const mesa of selMesas){
-    const r={socio_num:cu,mesa,turno:cTurno,fecha:fmt(cDate),comensales:coms,tel,obs};
+  // Store total comensales on first mesa, 0 on additional mesas
+  for(let i=0;i<selMesas.length;i++){
+    const r={socio_num:cu,mesa:selMesas[i],turno:cTurno,fecha:fmt(cDate),comensales:i===0?coms:0,tel,obs};
     const saved=await saveReserva(r);
     if(saved) reservas.push(saved);
   }
