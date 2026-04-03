@@ -180,6 +180,56 @@
   .btn-confirm{flex:1;padding:.88rem;background:var(--gold);color:var(--dark);border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:500;cursor:pointer;}
   .btn-confirm:hover{background:var(--gold-light);}
   .btn-back{padding:.88rem 1.2rem;background:none;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.92rem;cursor:pointer;color:var(--text-muted);}
+  /* ── KIOSK MODE ── */
+  #kiosk-screen{display:none;position:fixed;inset:0;background:var(--dark);z-index:300;flex-direction:row;}
+  #kiosk-screen.show{display:flex;}
+
+  /* Left panel - floor plan */
+  .kiosk-left{width:42%;background:#1E1810;display:flex;flex-direction:column;padding:1.5rem;border-right:1px solid rgba(201,168,76,.2);}
+  .kiosk-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+  .kiosk-logo{display:flex;align-items:center;gap:.75rem;}
+  .kiosk-logo img{width:52px;height:52px;object-fit:contain;border-radius:10px;background:#fff;padding:4px;}
+  .kiosk-title{font-family:'Playfair Display',serif;color:var(--gold);font-size:1.1rem;line-height:1.3;}
+  .kiosk-date{text-align:right;}
+  .kiosk-date .kd-day{font-family:'Playfair Display',serif;color:var(--gold);font-size:1.3rem;}
+  .kiosk-date .kd-date{font-size:.75rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em;}
+  .kiosk-floor{flex:1;display:flex;align-items:center;justify-content:center;}
+  .kiosk-floor svg{width:100%;height:auto;max-height:420px;}
+  .kiosk-reserve-btn{width:100%;padding:1.1rem;background:var(--gold);color:var(--dark);border:none;border-radius:14px;font-family:'Playfair Display',serif;font-size:1.2rem;cursor:pointer;margin-top:1rem;letter-spacing:.05em;transition:all .2s;}
+  .kiosk-reserve-btn:hover{background:var(--gold-light);}
+  .kiosk-exit-btn{background:none;border:none;color:rgba(255,255,255,.2);font-size:.7rem;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:.5rem;width:100%;text-align:center;}
+
+  /* Right panel - today's reservations */
+  .kiosk-right{flex:1;padding:1.5rem;overflow-y:auto;display:flex;flex-direction:column;gap:1rem;}
+  .kiosk-turno-section{background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.15);border-radius:14px;padding:1rem;}
+  .kiosk-turno-title{font-family:'Playfair Display',serif;color:var(--gold);font-size:1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem;}
+  .kiosk-mesa-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;border-radius:10px;margin-bottom:.4rem;}
+  .kiosk-mesa-row.libre{background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.3);}
+  .kiosk-mesa-row.ocupada{background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.2);}
+  .kiosk-mesa-name{font-family:'Playfair Display',serif;font-size:1rem;color:#fff;}
+  .kiosk-mesa-info{font-size:.8rem;color:rgba(255,255,255,.6);}
+  .kiosk-mesa-status{font-size:.75rem;font-weight:600;padding:.2rem .6rem;border-radius:20px;}
+  .kiosk-mesa-status.libre{background:rgba(39,174,96,.2);color:#27AE60;}
+  .kiosk-mesa-status.ocupada{background:rgba(192,57,43,.2);color:#e74c3c;}
+  .kiosk-live{display:flex;align-items:center;gap:.4rem;font-size:.68rem;color:rgba(255,255,255,.3);margin-top:auto;padding-top:.5rem;}
+  .kiosk-live-dot{width:6px;height:6px;border-radius:50%;background:#27AE60;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+  /* Kiosk login modal */
+  .kiosk-login-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:400;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+  .kiosk-login-overlay.show{display:flex;}
+  .kiosk-login-box{background:var(--dark);border:1px solid rgba(201,168,76,.3);border-radius:20px;padding:2rem;width:380px;}
+  .kiosk-login-box h3{font-family:'Playfair Display',serif;color:var(--gold);font-size:1.3rem;margin-bottom:.4rem;text-align:center;}
+  .kiosk-login-box p{font-size:.82rem;color:rgba(255,255,255,.4);text-align:center;margin-bottom:1.5rem;}
+  .kiosk-field{margin-bottom:1rem;}
+  .kiosk-field label{display:block;color:var(--gold-light);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem;}
+  .kiosk-field input{width:100%;padding:.85rem 1rem;background:rgba(255,255,255,.07);border:1px solid rgba(201,168,76,.25);border-radius:10px;color:#fff;font-family:'DM Sans',sans-serif;font-size:1.1rem;outline:none;transition:border-color .2s;}
+  .kiosk-field input:focus{border-color:var(--gold);}
+  .kiosk-login-btn{width:100%;padding:1rem;background:var(--gold);color:var(--dark);border:none;border-radius:10px;font-family:'Playfair Display',serif;font-size:1.05rem;cursor:pointer;transition:background .2s;}
+  .kiosk-login-btn:hover{background:var(--gold-light);}
+  .kiosk-login-error{color:#ff8080;font-size:.78rem;text-align:center;margin-top:.5rem;display:none;}
+  .kiosk-login-cancel{background:none;border:none;color:rgba(255,255,255,.3);font-size:.78rem;cursor:pointer;width:100%;margin-top:.75rem;font-family:'DM Sans',sans-serif;}
+
   .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(100px);background:var(--dark);color:var(--gold);padding:.7rem 1.4rem;border-radius:100px;font-size:.83rem;font-weight:500;border:1px solid rgba(201,168,76,.3);transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:1000;white-space:nowrap;}
   .toast.show{transform:translateX(-50%) translateY(0);}
 </style>
@@ -336,6 +386,7 @@
   <div id="tab-admin" class="content" style="display:none">
     <div class="admin-stats" id="admin-stats"></div>
     <button class="admin-create-btn" onclick="openAdminCreate()">+ Crear reserva manual</button>
+    <button class="admin-create-btn" style="border-color:#4A90D9;color:#4A90D9;background:rgba(74,144,217,.05)" onclick="enterKiosk()">🖥️ Activar modo quiosco (pantalla táctil)</button>
     <div class="section-title">Filtrar por turno</div>
     <div class="admin-filters">
       <div class="filter-chip active" onclick="setFilter('todos',this)">Todos</div>
@@ -425,6 +476,60 @@
       <button class="btn-back" onclick="closeSocioModal()">Cancelar</button>
       <button class="btn-confirm" onclick="saveSocio()">Guardar</button>
     </div>
+  </div>
+</div>
+
+<!-- KIOSK SCREEN -->
+<div id="kiosk-screen">
+  <!-- Left: floor plan -->
+  <div class="kiosk-left">
+    <div class="kiosk-header">
+      <div class="kiosk-logo">
+        <div id="kiosk-logo-wrap"></div>
+        <div class="kiosk-title">Sociedad Gastronómica<br><span style="font-size:.85em;opacity:.7">Club Ciclista Irunes</span></div>
+      </div>
+      <div class="kiosk-date">
+        <div class="kd-day" id="kiosk-day"></div>
+        <div class="kd-date" id="kiosk-date-label"></div>
+      </div>
+    </div>
+    <div class="kiosk-floor">
+      <svg id="kiosk-svg" viewBox="0 0 340 530" xmlns="http://www.w3.org/2000/svg">
+        <defs><pattern id="tile2" width="22" height="22" patternUnits="userSpaceOnUse"><rect width="22" height="22" fill="#EAE5DA"/><rect width="22" height="22" fill="none" stroke="#DDD8CC" stroke-width=".6"/></pattern></defs>
+        <rect x="8" y="8" width="324" height="514" fill="url(#tile2)" stroke="#8A8070" stroke-width="3.5"/>
+        <rect x="8" y="8" width="324" height="46" fill="#B8A888"/>
+        <rect x="16" y="14" width="308" height="32" rx="4" fill="#CEC0A0" stroke="#A89870" stroke-width="1"/>
+        <text x="170" y="35" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="13" font-weight="600" fill="#6B5840" letter-spacing="3">COCINA</text>
+        <rect x="8" y="54" width="64" height="468" fill="#E0DBD0" opacity=".55"/>
+        <line x1="72" y1="54" x2="72" y2="522" stroke="#AAA090" stroke-width="1.5" stroke-dasharray="7,5"/>
+        <text x="40" y="300" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" fill="#9A9280" letter-spacing="1.5" transform="rotate(-90,40,300)">PASILLO</text>
+        <rect x="326" y="54" width="6" height="468" fill="#8A8070"/>
+        <g id="km1"><rect id="km1-bg" x="110" y="58" width="216" height="82" rx="5" fill="#D4A83C" stroke="#27AE60" stroke-width="3"/><line x1="112" y1="85" x2="324" y2="85" stroke="rgba(0,0,0,.07)" stroke-width="1.5"/><line x1="112" y1="112" x2="324" y2="112" stroke="rgba(0,0,0,.07)" stroke-width="1.5"/><text x="218" y="97" text-anchor="middle" font-family="Playfair Display,serif" font-size="19" fill="#fff">Mesa 1</text><text id="km1-sub" x="218" y="116" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" fill="rgba(255,255,255,.85)"></text></g>
+        <g id="km2"><rect id="km2-bg" x="110" y="172" width="216" height="82" rx="5" fill="#D4A83C" stroke="#27AE60" stroke-width="3"/><line x1="112" y1="199" x2="324" y2="199" stroke="rgba(0,0,0,.07)" stroke-width="1.5"/><line x1="112" y1="226" x2="324" y2="226" stroke="rgba(0,0,0,.07)" stroke-width="1.5"/><text x="218" y="211" text-anchor="middle" font-family="Playfair Display,serif" font-size="19" fill="#fff">Mesa 2</text><text id="km2-sub" x="218" y="230" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" fill="rgba(255,255,255,.85)"></text></g>
+        <g id="km3"><rect id="km3-bg" x="110" y="286" width="216" height="82" rx="5" fill="#D4A83C" stroke="#27AE60" stroke-width="3"/><line x1="112" y1="313" x2="324" y2="313" stroke="rgba(0,0,0,.07)" stroke-width="1.5"/><line x1="112" y1="340" x2="324" y2="340" stroke="rgba(0,0,0,.07)" stroke-width="1.5"/><text x="218" y="325" text-anchor="middle" font-family="Playfair Display,serif" font-size="19" fill="#fff">Mesa 3</text><text id="km3-sub" x="218" y="344" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" fill="rgba(255,255,255,.85)"></text></g>
+        <g id="km4"><rect id="km4-bg" x="110" y="400" width="216" height="82" rx="5" fill="#D4A83C" stroke="#27AE60" stroke-width="3"/><line x1="112" y1="427" x2="324" y2="427" stroke="rgba(0,0,0,.07)" stroke-width="1.5"/><line x1="112" y1="454" x2="324" y2="454" stroke="rgba(0,0,0,.07)" stroke-width="1.5"/><text x="218" y="439" text-anchor="middle" font-family="Playfair Display,serif" font-size="19" fill="#fff">Mesa 4</text><text id="km4-sub" x="218" y="458" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" fill="rgba(255,255,255,.85)"></text></g>
+        <text x="40" y="510" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" font-weight="600" fill="#7A7060" letter-spacing="1">PUERTA</text>
+      </svg>
+    </div>
+    <button class="kiosk-reserve-btn" onclick="openKioskLogin()">📋 Hacer una reserva</button>
+    <button class="kiosk-exit-btn" onclick="exitKiosk()">Salir del modo quiosco</button>
+    <div class="kiosk-live"><div class="kiosk-live-dot"></div>En directo · actualización automática</div>
+  </div>
+
+  <!-- Right: today's reservations -->
+  <div class="kiosk-right" id="kiosk-right"></div>
+</div>
+
+<!-- Kiosk login modal -->
+<div class="kiosk-login-overlay" id="kiosk-login-overlay">
+  <div class="kiosk-login-box">
+    <h3>Identificación</h3>
+    <p>Introduce tu número de socio y DNI para hacer una reserva</p>
+    <div class="kiosk-field"><label>Número de socio</label><input type="text" id="kiosk-user" placeholder="Ej: 042" inputmode="numeric" autocomplete="off"></div>
+    <div class="kiosk-field"><label>DNI</label><input type="password" id="kiosk-pass" placeholder="Ej: 12345678A"></div>
+    <div class="kiosk-login-error" id="kiosk-error">Número de socio o DNI incorrecto</div>
+    <button class="kiosk-login-btn" onclick="doKioskLogin()">Entrar →</button>
+    <button class="kiosk-login-cancel" onclick="closeKioskLogin()">Cancelar</button>
   </div>
 </div>
 
@@ -1062,6 +1167,132 @@ function switchTab(tab){
   if(tab==='mias')renderMisReservas();
   if(tab==='admin')renderAdminPanel();
   if(tab==='socios')renderSociosList();
+}
+
+// ── KIOSK MODE ─────────────────────────────────────────────
+let kioskChannel=null;
+
+function enterKiosk(){
+  // Copy logo into kiosk
+  const logoImg=document.querySelector('.emblem-logo img');
+  if(logoImg) document.getElementById('kiosk-logo-wrap').innerHTML=logoImg.outerHTML;
+  document.getElementById('kiosk-screen').classList.add('show');
+  renderKioskDate();
+  renderKioskFloor();
+  renderKioskRight();
+  startKioskRealtime();
+  // Refresh every minute
+  window._kioskInterval=setInterval(()=>{renderKioskDate();renderKioskFloor();renderKioskRight();},60000);
+}
+
+function exitKiosk(){
+  document.getElementById('kiosk-screen').classList.remove('show');
+  if(kioskChannel){sb.removeChannel(kioskChannel);kioskChannel=null;}
+  clearInterval(window._kioskInterval);
+}
+
+function startKioskRealtime(){
+  if(kioskChannel) sb.removeChannel(kioskChannel);
+  kioskChannel=sb.channel('reservas-changes')
+    .on('postgres_changes',{event:'*',schema:'public',table:'reservas'},async()=>{
+      await loadReservas();
+      renderKioskFloor();
+      renderKioskRight();
+    })
+    .subscribe();
+}
+
+function renderKioskDate(){
+  const now=new Date();
+  document.getElementById('kiosk-day').textContent=DIAS[now.getDay()];
+  document.getElementById('kiosk-date-label').textContent=now.getDate()+' '+MESES[now.getMonth()].slice(0,3).toUpperCase()+' '+now.getFullYear();
+}
+
+function renderKioskFloor(){
+  const f=fmt(new Date());
+  // Show current turno based on time
+  const h=new Date().getHours();
+  const turno=h<15?'comida':h<19?'merienda':'cena';
+  [1,2,3,4].forEach(id=>{
+    const res=getRes(id,turno,f);
+    const libre=!res;
+    const bg=document.getElementById('km'+id+'-bg');
+    const sub=document.getElementById('km'+id+'-sub');
+    if(!bg)return;
+    bg.setAttribute('fill',libre?FILL.libre:FILL.occupied);
+    bg.setAttribute('stroke',libre?COL.libre:COL.occupied);
+    sub.textContent=libre?'':(sN(res.socio_num).split(' ')[0]+' · '+res.comensales+' pers.');
+  });
+}
+
+function renderKioskRight(){
+  const f=fmt(new Date());
+  const turnos=[
+    {key:'comida',label:'Comida',icon:'🍽️'},
+    {key:'merienda',label:'Merienda',icon:'☕'},
+    {key:'cena',label:'Cena',icon:'🌙'}
+  ];
+  const html=turnos.map(t=>{
+    const rows=[1,2,3,4].map(id=>{
+      const res=getRes(id,t.key,f);
+      const libre=!res;
+      return '<div class="kiosk-mesa-row '+(libre?'libre':'ocupada')+'">'+
+        '<div>'+
+          '<div class="kiosk-mesa-name">Mesa '+id+'</div>'+
+          (libre?'':'<div class="kiosk-mesa-info">'+sN(res.socio_num)+' · '+res.comensales+' pers.</div>')+
+        '</div>'+
+        '<span class="kiosk-mesa-status '+(libre?'libre':'ocupada')+'">'+(libre?'Libre':'Reservada')+'</span>'+
+      '</div>';
+    }).join('');
+    return '<div class="kiosk-turno-section">'+
+      '<div class="kiosk-turno-title"><span>'+t.icon+'</span><span>'+t.label+'</span></div>'+
+      rows+
+    '</div>';
+  }).join('');
+  document.getElementById('kiosk-right').innerHTML=html;
+}
+
+function openKioskLogin(){
+  document.getElementById('kiosk-user').value='';
+  document.getElementById('kiosk-pass').value='';
+  document.getElementById('kiosk-error').style.display='none';
+  document.getElementById('kiosk-login-overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('kiosk-user').focus(),100);
+}
+
+function closeKioskLogin(){
+  document.getElementById('kiosk-login-overlay').classList.remove('show');
+}
+
+function doKioskLogin(){
+  const u=document.getElementById('kiosk-user').value.trim().padStart(3,'0');
+  const p=document.getElementById('kiosk-pass').value.trim().toUpperCase();
+  const s=SOCIOS[u];
+  if(!s||s.dni.toUpperCase()!==p){
+    document.getElementById('kiosk-error').style.display='block';return;
+  }
+  closeKioskLogin();
+  // Pre-fill the main app and go to reserva tab
+  cu=u;
+  document.getElementById('f-nombre').value=sN(u);
+  document.getElementById('user-avatar').textContent=s.initials;
+  // Exit kiosk temporarily, go to plano
+  exitKiosk();
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app-screen').style.display='block';
+  if(s.admin){
+    document.getElementById('admin-badge').style.display='inline';
+    document.querySelectorAll('.admin-only').forEach(el=>el.style.display='flex');
+  }
+  // Add back-to-kiosk button
+  const backBtn=document.createElement('button');
+  backBtn.textContent='← Volver al panel';
+  backBtn.style.cssText='position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);background:var(--dark);color:var(--gold);border:1px solid rgba(201,168,76,.3);border-radius:20px;padding:.5rem 1.2rem;font-family:DM Sans,sans-serif;font-size:.78rem;cursor:pointer;z-index:99;';
+  backBtn.onclick=()=>{backBtn.remove();doLogout();enterKiosk();};
+  document.body.appendChild(backBtn);
+  renderDate();renderFloor();renderStatus();
+  [1,2,3,4].forEach(id=>document.getElementById('mesa-'+id).addEventListener('click',()=>handleClick(id)));
+  switchTab('plano');
 }
 
 function showToast(msg){
