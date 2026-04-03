@@ -719,7 +719,8 @@ function renderCalGrid(){
     const disabled=dt<today||dt>maxD;
     const hasRes=reservas.some(r=>r.fecha===ds&&r.socio_num===cu);
     let cls='cal-day'+(isToday?' today':'')+(isSel?' selected':'')+(disabled?' disabled':'')+(hasRes&&!disabled?' has-res':'');
-    html+='<div class="'+cls+'" onclick="pickCalDay(''+ds+'')">'+d+'</div>';
+    const dayEl = '<div class="'+cls+'" data-date="'+ds+'" onclick="pickCalDay(this.dataset.date)">'+d+'</div>';
+    html+=dayEl;
   }
   document.getElementById('cal-grid').innerHTML=html;
 }
@@ -842,7 +843,7 @@ function renderMisReservas(){
       (r.tel?'<div class="reserva-meta">📞 '+r.tel+'</div>':'')+
       (r.obs?'<div class="reserva-meta">📝 '+r.obs+'</div>':'')+
       '</div>'+
-      '<button class="btn-cancelar" onclick="cancelRes(''+r.id+'')">Cancelar</button>'+
+      '<button class="btn-cancelar" onclick="cancelRes(\''+r.id+'\')">Cancelar</button>'+
       '</div>';
   }).join('');
 }
@@ -878,7 +879,7 @@ function renderAdminPanel(){
       '<div class="admin-reserva-meta">'+DIAS[d.getDay()]+' '+d.getDate()+' '+MESES_C[d.getMonth()]+' · Socio nº '+parseInt(r.socio_num)+'</div>'+
       (r.tel?'<div class="admin-reserva-meta">📞 '+r.tel+'</div>':'')+
       (r.obs?'<div class="admin-reserva-meta">📝 '+r.obs+'</div>':'')+
-      '<button class="btn-admin-cancel" onclick="adminCancel(''+r.id+'')">Cancelar reserva</button>'+
+      '<button class="btn-admin-cancel" onclick="adminCancel(\''+r.id+'\')">Cancelar reserva</button>'+
       '</div>';
   }).join('');
 }
@@ -940,8 +941,8 @@ function renderSociosList(){
       '<div class="socio-num">'+parseInt(num)+'</div>'+
       '<div class="socio-info"><div class="socio-name">'+s.nombre+' '+s.apellidos+'</div><div class="socio-dni">DNI: '+s.dni+'</div></div>'+
       '<div class="socio-actions">'+
-      '<button class="btn-edit" onclick="openSocioForm(''+num+'')">Editar</button>'+
-      '<button class="btn-del" onclick="deleteSocio(''+num+'')">✕</button>'+
+      '<button class="btn-edit" onclick="openSocioForm(\''+num+'\')">Editar</button>'+
+      '<button class="btn-del" onclick="deleteSocio(\''+num+'\')">✕</button>'+
       '</div></div>'
     ).join('');
 }
