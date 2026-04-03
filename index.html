@@ -306,6 +306,7 @@
       <div class="legend-item"><div class="legend-dot" style="background:#C0392B"></div>Ocupada</div>
       <div class="legend-item"><div class="legend-dot" style="background:#C9A84C"></div>Mi reserva</div>
     </div>
+    <div style="text-align:center;font-size:.72rem;color:var(--text-muted);margin-bottom:.75rem;">Puedes seleccionar varias mesas a la vez</div>
     <div class="status-panel" id="status-panel"></div>
     <div class="reserva-form" id="reserva-form">
       <h3 id="form-title">Reservar mesa</h3>
@@ -603,7 +604,7 @@ const COL={libre:'#27AE60',occupied:'#C0392B',mia:'#C9A84C'};
 const FILL={libre:'#D4A83C',occupied:'#B03020',mia:'#A88830'};
 
 // ── ESTADO ───────────────────────────────────────────
-let cu=null, cDate=new Date(), cTurno='comida', selMesa=null;
+let cu=null, cDate=new Date(), cTurno='comida', selMesas=[];
 let coms=8, adminComs=8, aFilter='todos', editingSocio=null;
 let reservas=[]; // cargadas desde Supabase
 let calViewDate=new Date();
@@ -649,7 +650,7 @@ async function doLogin(){
 document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 
 function doLogout(){
-  cu=null;selMesa=null;coms=8;reservas=[];
+  cu=null;selMesas=[];coms=8;reservas=[];
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('app-screen').style.display='none';
   document.getElementById('login-user').value='';
@@ -695,7 +696,7 @@ function changeDate(dir){
   const maxD=new Date(today);maxD.setDate(today.getDate()+30);
   const cd=new Date(cDate);cd.setDate(cd.getDate()+dir);
   if(cd<today||cd>maxD)return;
-  cDate=cd;selMesa=null;
+  cDate=cd;selMesas=[];
   document.getElementById('reserva-form').classList.remove('visible');
   renderDate();renderFloor();renderStatus();
 }
@@ -741,14 +742,14 @@ function pickCalDay(ds){
   const maxD=new Date(today);maxD.setDate(today.getDate()+30);
   const d=new Date(ds+'T12:00:00');
   if(d<today||d>maxD)return;
-  cDate=d;selMesa=null;
+  cDate=d;selMesas=[];
   document.getElementById('reserva-form').classList.remove('visible');
   renderDate();renderFloor();renderStatus();closeCal();
 }
 
 // ── TURNO ────────────────────────────────────────────
 function selTurno(t,el){
-  cTurno=t;selMesa=null;
+  cTurno=t;selMesas=[];
   document.getElementById('reserva-form').classList.remove('visible');
   document.querySelectorAll('.turno-btn').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');renderFloor();renderStatus();
@@ -760,11 +761,12 @@ function renderFloor(){
   [1,2,3,4].forEach(id=>{
     const res=getRes(id,cTurno,f);
     const libre=!res,esMia=res&&res.socio_num===cu;
+    const isSel=selMesas.includes(id);
     document.getElementById('m'+id+'-bg').setAttribute('fill',libre?FILL.libre:esMia?FILL.mia:FILL.occupied);
-    document.getElementById('m'+id+'-bg').setAttribute('stroke',selMesa===id?'#E8CC7A':libre?COL.libre:esMia?COL.mia:COL.occupied);
-    document.getElementById('m'+id+'-bg').setAttribute('stroke-width',selMesa===id?'5':'3');
+    document.getElementById('m'+id+'-bg').setAttribute('stroke',isSel?'#E8CC7A':libre?COL.libre:esMia?COL.mia:COL.occupied);
+    document.getElementById('m'+id+'-bg').setAttribute('stroke-width',isSel?'5':'3');
     const sub=document.getElementById('m'+id+'-sub');
-    sub.textContent=libre?'':(esMia?'✓ Tu reserva':sN(res.socio_num).split(' ')[0]+' · '+res.comensales+' pers.');
+    sub.textContent=libre?(isSel?'✓ Seleccionada':''):(esMia?'✓ Tu reserva':sN(res.socio_num).split(' ')[0]+' · '+res.comensales+' pers.');
     document.getElementById('mesa-'+id).style.cursor=libre||isAdmin()?'pointer':'not-allowed';
   });
 }
@@ -772,19 +774,33 @@ function renderFloor(){
 function handleClick(id){
   const f=fmt(cDate),res=getRes(id,cTurno,f);
   const libre=!res,esMia=res&&res.socio_num===cu;
-  if(libre){pickMesa(id);}
-  else if(esMia){showToast('Ya tienes esta mesa reservada');}
+  if(libre){
+    if(selMesas.includes(id)){
+      // Deselect
+      selMesas=selMesas.filter(m=>m!==id);
+    } else {
+      // Select
+      selMesas.push(id);
+      selMesas.sort();
+    }
+    updateReservaForm();
+    renderFloor();
+  } else if(esMia){showToast('Ya tienes esta mesa reservada');}
   else if(isAdmin()){
     if(confirm('¿Cancelar reserva de '+sN(res.socio_num)+' en Mesa '+id+'?')) adminCancelDirect(res);
   } else {showToast('Mesa ocupada');}
 }
 
-function pickMesa(id){
-  selMesa=id;coms=8;
+function updateReservaForm(){
+  if(selMesas.length===0){
+    document.getElementById('reserva-form').classList.remove('visible');
+    return;
+  }
+  coms=8;
   document.getElementById('f-coms').textContent=8;
-  document.getElementById('form-title').textContent='Mesa '+id+' · '+TL[cTurno];
+  const mesasLabel = selMesas.length===1 ? 'Mesa '+selMesas[0] : 'Mesas '+selMesas.join(' + ');
+  document.getElementById('form-title').textContent=mesasLabel+' · '+TL[cTurno];
   document.getElementById('reserva-form').classList.add('visible');
-  renderFloor();
   setTimeout(()=>document.getElementById('reserva-form').scrollIntoView({behavior:'smooth',block:'nearest'}),50);
 }
 function changeComs(d){coms=Math.max(1,Math.min(10,coms+d));document.getElementById('f-coms').textContent=coms;}
@@ -806,18 +822,19 @@ function renderStatus(){
 
 // ── CONFIRMAR RESERVA ────────────────────────────────
 function openConfirm(){
-  if(!selMesa)return;
+  if(selMesas.length===0)return;
   if(!document.getElementById('f-tel').value.trim()){showToast('Introduce un teléfono de contacto');return;}
   const cd=new Date(cDate);
   const fStr=DIAS[cd.getDay()]+', '+cd.getDate()+' de '+MESES[cd.getMonth()];
   const obs=document.getElementById('f-obs').value;
   const tel=document.getElementById('f-tel').value;
+  const mesasLabel=selMesas.length===1?'Mesa '+selMesas[0]:'Mesas '+selMesas.join(' + ');
   document.getElementById('modal-summary').innerHTML=
     '<div class="summary-row"><span>Socio</span><span>'+sN(cu)+'</span></div>'+
-    '<div class="summary-row"><span>Mesa</span><span>Mesa '+selMesa+'</span></div>'+
+    '<div class="summary-row"><span>'+( selMesas.length===1?'Mesa':'Mesas')+'</span><span>'+mesasLabel+'</span></div>'+
     '<div class="summary-row"><span>Fecha</span><span>'+fStr+'</span></div>'+
     '<div class="summary-row"><span>Turno</span><span>'+TL[cTurno]+'</span></div>'+
-    '<div class="summary-row"><span>Comensales</span><span>'+coms+' personas</span></div>'+
+    '<div class="summary-row"><span>Comensales por mesa</span><span>'+coms+' personas</span></div>'+
     '<div class="summary-row"><span>Teléfono</span><span>'+tel+'</span></div>'+
     (obs?'<div class="summary-row"><span>Observaciones</span><span>'+obs+'</span></div>':'');
   document.getElementById('confirm-modal').classList.add('show');
@@ -827,16 +844,22 @@ function closeConfirm(){document.getElementById('confirm-modal').classList.remov
 async function doReserva(){
   const btn=document.getElementById('btn-confirm-ok');
   btn.disabled=true;btn.textContent='Guardando…';
-  const r={socio_num:cu,mesa:selMesa,turno:cTurno,fecha:fmt(cDate),comensales:coms,tel:document.getElementById('f-tel').value,obs:document.getElementById('f-obs').value};
-  const saved=await saveReserva(r);
+  const tel=document.getElementById('f-tel').value;
+  const obs=document.getElementById('f-obs').value;
+  // Save one reservation per selected mesa
+  for(const mesa of selMesas){
+    const r={socio_num:cu,mesa,turno:cTurno,fecha:fmt(cDate),comensales:coms,tel,obs};
+    const saved=await saveReserva(r);
+    if(saved) reservas.push(saved);
+  }
   btn.disabled=false;btn.textContent='Confirmar';
-  if(!saved){closeConfirm();return;}
-  reservas.push(saved);
-  closeConfirm();selMesa=null;
+  const numMesas=selMesas.length;
+  closeConfirm();selMesas=[];
   document.getElementById('reserva-form').classList.remove('visible');
   document.getElementById('f-tel').value='';
   document.getElementById('f-obs').value='';
-  renderFloor();renderStatus();renderCalGrid();showToast('✓ Reserva confirmada');
+  renderFloor();renderStatus();renderCalGrid();
+  showToast('✓ '+(numMesas>1?numMesas+' reservas confirmadas':'Reserva confirmada'));
 }
 
 // ── MIS RESERVAS ─────────────────────────────────────
@@ -907,7 +930,7 @@ async function adminCancel(id){
 async function adminCancelDirect(res){
   const ok=await deleteReserva(res.id);if(!ok)return;
   reservas=reservas.filter(x=>x.id!==res.id);
-  selMesa=null;document.getElementById('reserva-form').classList.remove('visible');
+  selMesas=[];document.getElementById('reserva-form').classList.remove('visible');
   renderFloor();renderStatus();renderAdminPanel();showToast('Reserva cancelada');
 }
 
