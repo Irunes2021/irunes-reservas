@@ -871,22 +871,45 @@ async function doReserva(){
 // ── MIS RESERVAS ─────────────────────────────────────
 function renderMisReservas(){
   const today=fmt(new Date());
-  const mias=reservas.filter(r=>r.socio_num===cu&&r.fecha>=today).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const mias=reservas.filter(r=>r.socio_num===cu&&r.fecha>=today).sort((a,b)=>a.fecha.localeCompare(b.fecha)||['comida','merienda','cena'].indexOf(a.turno)-['comida','merienda','cena'].indexOf(b.turno));
   const list=document.getElementById('mis-reservas-list');
   if(!mias.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">📅</div><p>No tienes reservas próximas.</p></div>';return;}
-  list.innerHTML=mias.map(r=>{
-    const d=new Date(r.fecha+'T12:00:00');
+
+  // Group by fecha+turno
+  const groups={};
+  mias.forEach(r=>{
+    const key=r.fecha+'_'+r.turno;
+    if(!groups[key]) groups[key]=[];
+    groups[key].push(r);
+  });
+
+  list.innerHTML=Object.values(groups).map(group=>{
+    const first=group[0];
+    const d=new Date(first.fecha+'T12:00:00');
+    const mesas=group.map(r=>r.mesa).sort().join(' + ');
+    const mesaLabel=group.length>1?'Mesas '+mesas:'Mesa '+mesas;
+    const totalComs=group.reduce((a,r)=>a+r.comensales,0);
+    const ids=group.map(r=>r.id);
     return '<div class="reserva-item">'+
       '<div class="reserva-date-box"><div class="rday">'+d.getDate()+'</div><div class="rmonth">'+MESES_C[d.getMonth()]+'</div></div>'+
       '<div class="reserva-info">'+
-      '<div class="mesa-name">Mesa '+r.mesa+'</div>'+
-      '<div class="reserva-meta">'+r.comensales+' comensales · <span class="reserva-turno">'+TL[r.turno]+'</span></div>'+
-      (r.tel?'<div class="reserva-meta">📞 '+r.tel+'</div>':'')+
-      (r.obs?'<div class="reserva-meta">📝 '+r.obs+'</div>':'')+
+      '<div class="mesa-name">'+mesaLabel+'</div>'+
+      '<div class="reserva-meta">'+totalComs+' comensales · <span class="reserva-turno">'+TL[first.turno]+'</span></div>'+
+      (first.tel?'<div class="reserva-meta">📞 '+first.tel+'</div>':'')+
+      (first.obs?'<div class="reserva-meta">📝 '+first.obs+'</div>':'')+
       '</div>'+
-      '<button class="btn-cancelar" onclick="cancelRes(\''+r.id+'\')">Cancelar</button>'+
+      '<button class="btn-cancelar" onclick="cancelResGroup('+JSON.stringify(ids)+')">Cancelar</button>'+
       '</div>';
   }).join('');
+}
+
+async function cancelResGroup(ids){
+  if(!confirm('¿Cancelar esta reserva?'))return;
+  for(const id of ids){
+    await deleteReserva(id);
+    reservas=reservas.filter(r=>r.id!==id);
+  }
+  renderMisReservas();renderFloor();renderStatus();renderCalGrid();showToast('Reserva cancelada');
 }
 
 async function cancelRes(id){
