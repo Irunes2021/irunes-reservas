@@ -992,9 +992,9 @@ async function doReserva(){
   const tel=document.getElementById('f-tel').value;
   const obs=document.getElementById('f-obs').value;
   // Save one reservation per selected mesa
-  // Store total comensales on first mesa, 0 on additional mesas
+  // Store total comensales on ALL mesas
   for(let i=0;i<selMesas.length;i++){
-    const r={socio_num:cu,mesa:selMesas[i],turno:cTurno,fecha:fmt(cDate),comensales:i===0?coms:0,tel,obs};
+    const r={socio_num:cu,mesa:selMesas[i],turno:cTurno,fecha:fmt(cDate),comensales:coms,tel,obs};
     const saved=await saveReserva(r);
     if(saved) reservas.push(saved);
   }
@@ -1028,7 +1028,7 @@ function renderMisReservas(){
     const d=new Date(first.fecha+'T12:00:00');
     const mesas=group.map(r=>r.mesa).sort().join(' + ');
     const mesaLabel=group.length>1?'Mesas '+mesas:'Mesa '+mesas;
-    const totalComs=group.reduce((a,r)=>a+r.comensales,0);
+    const totalComs=group[0].comensales; // All mesas store same total
     const ids=group.map(r=>r.id);
     return '<div class="reserva-item">'+
       '<div class="reserva-date-box"><div class="rday">'+d.getDate()+'</div><div class="rmonth">'+MESES_C[d.getMonth()]+'</div></div>'+
