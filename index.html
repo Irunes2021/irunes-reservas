@@ -488,9 +488,13 @@
         <div id="kiosk-logo-wrap"></div>
         <div class="kiosk-title">Sociedad Gastronómica<br><span style="font-size:.85em;opacity:.7">Club Ciclista Irunes</span></div>
       </div>
-      <div class="kiosk-date">
-        <div class="kd-day" id="kiosk-day"></div>
-        <div class="kd-date" id="kiosk-date-label"></div>
+      <div class="kiosk-date" style="display:flex;align-items:center;gap:.75rem;">
+        <button id="kiosk-btn-prev" onclick="changeKioskDate(-1)" style="background:none;border:none;color:var(--gold);font-size:1.8rem;cursor:pointer;line-height:1;padding:.1rem .3rem;">‹</button>
+        <div style="text-align:center;">
+          <div class="kd-day" id="kiosk-day"></div>
+          <div class="kd-date" id="kiosk-date-label"></div>
+        </div>
+        <button id="kiosk-btn-next" onclick="changeKioskDate(1)" style="background:none;border:none;color:var(--gold);font-size:1.8rem;cursor:pointer;line-height:1;padding:.1rem .3rem;">›</button>
       </div>
     </div>
     <div class="kiosk-floor">
@@ -1170,9 +1174,9 @@ function switchTab(tab){
 }
 
 // ── KIOSK MODE ─────────────────────────────────────────────
-let kioskChannel=null;
+let kioskChannel=null, kioskDate=new Date();
 
-function enterKiosk(){
+function enterKiosk(){kioskDate=new Date();
   // Copy logo into kiosk
   const logoImg=document.querySelector('.emblem-logo img');
   if(logoImg) document.getElementById('kiosk-logo-wrap').innerHTML=logoImg.outerHTML;
@@ -1202,14 +1206,31 @@ function startKioskRealtime(){
     .subscribe();
 }
 
+function changeKioskDate(dir){
+  const today=new Date();today.setHours(0,0,0,0);
+  const maxD=new Date(today);maxD.setDate(today.getDate()+30);
+  const nd=new Date(kioskDate);nd.setDate(nd.getDate()+dir);
+  nd.setHours(0,0,0,0);
+  if(nd<today||nd>maxD)return;
+  kioskDate=nd;
+  renderKioskDate();renderKioskFloor();renderKioskRight();
+}
+
 function renderKioskDate(){
-  const now=new Date();
-  document.getElementById('kiosk-day').textContent=DIAS[now.getDay()];
-  document.getElementById('kiosk-date-label').textContent=now.getDate()+' '+MESES[now.getMonth()].slice(0,3).toUpperCase()+' '+now.getFullYear();
+  const today=new Date();today.setHours(0,0,0,0);
+  const maxD=new Date(today);maxD.setDate(today.getDate()+30);
+  const kd=new Date(kioskDate);kd.setHours(0,0,0,0);
+  const isToday=kd.getTime()===today.getTime();
+  document.getElementById('kiosk-day').textContent=isToday?'Hoy · '+DIAS[kd.getDay()]:DIAS[kd.getDay()];
+  document.getElementById('kiosk-date-label').textContent=kd.getDate()+' '+MESES[kd.getMonth()].slice(0,3).toUpperCase()+' '+kd.getFullYear();
+  document.getElementById('kiosk-btn-prev').style.opacity=kd<=today?'0.2':'1';
+  document.getElementById('kiosk-btn-prev').style.pointerEvents=kd<=today?'none':'auto';
+  document.getElementById('kiosk-btn-next').style.opacity=kd>=maxD?'0.2':'1';
+  document.getElementById('kiosk-btn-next').style.pointerEvents=kd>=maxD?'none':'auto';
 }
 
 function renderKioskFloor(){
-  const f=fmt(new Date());
+  const f=fmt(kioskDate);
   // Show current turno based on time
   const h=new Date().getHours();
   const turno=h<15?'comida':h<19?'merienda':'cena';
@@ -1226,7 +1247,7 @@ function renderKioskFloor(){
 }
 
 function renderKioskRight(){
-  const f=fmt(new Date());
+  const f=fmt(kioskDate);
   const turnos=[
     {key:'comida',label:'Comida',icon:'🍽️'},
     {key:'merienda',label:'Merienda',icon:'☕'},
