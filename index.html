@@ -215,6 +215,25 @@
   .kiosk-live-dot{width:6px;height:6px;border-radius:50%;background:#27AE60;animation:pulse 2s infinite;}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
+  /* Kiosk calendar popup */
+  .kiosk-cal-overlay{position:fixed;inset:0;z-index:450;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);}
+  .kiosk-cal-overlay.show{display:flex;}
+  .kiosk-cal-box{background:var(--dark);border:1px solid rgba(201,168,76,.3);border-radius:20px;padding:1.5rem;width:340px;animation:fadeUp .2s ease;}
+  .kiosk-cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+  .kiosk-cal-header button{background:none;border:none;color:var(--gold);font-size:1.4rem;cursor:pointer;padding:.2rem .5rem;border-radius:8px;line-height:1;}
+  .kiosk-cal-header button:hover{background:rgba(201,168,76,.15);}
+  .kiosk-cal-month{font-family:'Playfair Display',serif;color:var(--gold);font-size:1.1rem;}
+  .kiosk-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .kiosk-cal-dow{text-align:center;font-size:.65rem;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.35);padding-bottom:.5rem;}
+  .kiosk-cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:.9rem;cursor:pointer;color:rgba(255,255,255,.75);transition:all .15s;border:1.5px solid transparent;}
+  .kiosk-cal-day:hover{background:rgba(201,168,76,.2);color:#fff;}
+  .kiosk-cal-day.today{border-color:rgba(201,168,76,.4);color:var(--gold);}
+  .kiosk-cal-day.selected{background:var(--gold);color:var(--dark);font-weight:700;}
+  .kiosk-cal-day.disabled{color:rgba(255,255,255,.15);cursor:not-allowed;pointer-events:none;}
+  .kiosk-cal-day.empty{pointer-events:none;}
+  .kiosk-cal-day.has-res{position:relative;}
+  .kiosk-cal-day.has-res::after{content:'';width:5px;height:5px;border-radius:50%;background:var(--gold);position:absolute;bottom:3px;left:50%;transform:translateX(-50%);}
+
   /* Kiosk login modal */
   .kiosk-login-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:400;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
   .kiosk-login-overlay.show{display:flex;}
@@ -490,9 +509,9 @@
       </div>
       <div class="kiosk-date" style="display:flex;align-items:center;gap:.75rem;">
         <button id="kiosk-btn-prev" onclick="changeKioskDate(-1)" style="background:none;border:none;color:var(--gold);font-size:1.8rem;cursor:pointer;line-height:1;padding:.1rem .3rem;">‹</button>
-        <div style="text-align:center;">
+        <div style="text-align:center;cursor:pointer;" onclick="openKioskCal()" title="Abrir calendario">
           <div class="kd-day" id="kiosk-day"></div>
-          <div class="kd-date" id="kiosk-date-label"></div>
+          <div class="kd-date" id="kiosk-date-label" style="text-decoration:underline;text-underline-offset:3px;"></div>
         </div>
         <button id="kiosk-btn-next" onclick="changeKioskDate(1)" style="background:none;border:none;color:var(--gold);font-size:1.8rem;cursor:pointer;line-height:1;padding:.1rem .3rem;">›</button>
       </div>
@@ -534,6 +553,18 @@
     <div class="kiosk-login-error" id="kiosk-error">Número de socio o DNI incorrecto</div>
     <button class="kiosk-login-btn" onclick="doKioskLogin()">Entrar →</button>
     <button class="kiosk-login-cancel" onclick="closeKioskLogin()">Cancelar</button>
+  </div>
+</div>
+
+<!-- Kiosk Calendar -->
+<div class="kiosk-cal-overlay" id="kiosk-cal-overlay" onclick="closeKioskCal()">
+  <div class="kiosk-cal-box" onclick="event.stopPropagation()">
+    <div class="kiosk-cal-header">
+      <button onclick="kioskCalNav(-1)">‹</button>
+      <span class="kiosk-cal-month" id="kiosk-cal-month"></span>
+      <button onclick="kioskCalNav(1)">›</button>
+    </div>
+    <div class="kiosk-cal-grid" id="kiosk-cal-grid"></div>
   </div>
 </div>
 
@@ -1314,6 +1345,55 @@ function doKioskLogin(){
   renderDate();renderFloor();renderStatus();
   [1,2,3,4].forEach(id=>document.getElementById('mesa-'+id).addEventListener('click',()=>handleClick(id)));
   switchTab('plano');
+}
+
+// ── KIOSK CALENDAR ──────────────────────────────────────────
+let kioskCalView=new Date();
+
+function openKioskCal(){
+  kioskCalView=new Date(kioskDate);
+  renderKioskCalGrid();
+  document.getElementById('kiosk-cal-overlay').classList.add('show');
+}
+function closeKioskCal(){
+  document.getElementById('kiosk-cal-overlay').classList.remove('show');
+}
+function kioskCalNav(dir){
+  kioskCalView.setMonth(kioskCalView.getMonth()+dir);
+  renderKioskCalGrid();
+}
+function renderKioskCalGrid(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const maxD=new Date(today);maxD.setDate(today.getDate()+30);
+  const sel=fmt(kioskDate);
+  const y=kioskCalView.getFullYear(),m=kioskCalView.getMonth();
+  document.getElementById('kiosk-cal-month').textContent=MESES[m]+' '+y;
+  const firstDay=new Date(y,m,1).getDay();
+  const days=new Date(y,m+1,0).getDate();
+  const offset=(firstDay+6)%7;
+  const DOWS=['L','M','X','J','V','S','D'];
+  let html=DOWS.map(d=>'<div class="kiosk-cal-dow">'+d+'</div>').join('');
+  for(let i=0;i<offset;i++) html+='<div class="kiosk-cal-day empty"></div>';
+  for(let d=1;d<=days;d++){
+    const dt=new Date(y,m,d);dt.setHours(0,0,0,0);
+    const ds=fmt(dt);
+    const isToday=dt.getTime()===today.getTime();
+    const isSel=ds===sel;
+    const disabled=dt<today||dt>maxD;
+    const hasRes=reservas.some(r=>r.fecha===ds);
+    let cls='kiosk-cal-day'+(isToday?' today':'')+(isSel?' selected':'')+(disabled?' disabled':'')+(hasRes&&!disabled?' has-res':'');
+    html+='<div class="'+cls+'" onclick="pickKioskCalDay(''+ds+'')">'+d+'</div>';
+  }
+  document.getElementById('kiosk-cal-grid').innerHTML=html;
+}
+function pickKioskCalDay(ds){
+  const today=new Date();today.setHours(0,0,0,0);
+  const maxD=new Date(today);maxD.setDate(today.getDate()+30);
+  const d=new Date(ds+'T12:00:00');
+  if(d<today||d>maxD)return;
+  kioskDate=d;
+  closeKioskCal();
+  renderKioskDate();renderKioskFloor();renderKioskRight();
 }
 
 function showToast(msg){
