@@ -1382,7 +1382,7 @@ function renderKioskCalGrid(){
     const disabled=dt<today||dt>maxD;
     const hasRes=reservas.some(r=>r.fecha===ds);
     let cls='kiosk-cal-day'+(isToday?' today':'')+(isSel?' selected':'')+(disabled?' disabled':'')+(hasRes&&!disabled?' has-res':'');
-    html+='<div class="'+cls+'" onclick="pickKioskCalDay(''+ds+'')">'+d+'</div>';
+    html+='<div class="'+cls+'" onclick="pickKioskCalDay(\"'+ds+'\")">'+d+'</div>';
   }
   document.getElementById('kiosk-cal-grid').innerHTML=html;
 }
