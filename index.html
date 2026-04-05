@@ -490,6 +490,7 @@
     <div class="form-row"><label>Nombre</label><input type="text" id="sm-nombre" placeholder="Ej: Jon"></div>
     <div class="form-row"><label>Apellidos</label><input type="text" id="sm-apellidos" placeholder="Ej: Urrutia Osa"></div>
     <div class="form-row"><label>DNI</label><input type="text" id="sm-dni" placeholder="Ej: 12345678A" style="text-transform:uppercase"></div>
+    <div class="form-row"><label>Teléfono móvil (opcional)</label><input type="tel" id="sm-tel" placeholder="Ej: 619465576" inputmode="numeric" maxlength="9"></div>
     <div id="sm-error" style="color:#ff6b6b;font-size:.78rem;margin-bottom:.5rem;display:none"></div>
     <div class="modal-actions">
       <button class="btn-back" onclick="closeSocioModal()">Cancelar</button>
@@ -1171,6 +1172,10 @@ function openSocioForm(num){
     document.getElementById('sm-nombre').value=s.nombre;
     document.getElementById('sm-apellidos').value=s.apellidos;
     document.getElementById('sm-dni').value=s.dni;
+    // Load tel from Supabase
+    sb.from('socios').select('tel').eq('socio_num',num).single().then(({data})=>{
+      document.getElementById('sm-tel').value=data&&data.tel?data.tel:'';
+    });
   } else {
     document.getElementById('socio-modal-title').textContent='Nuevo socio';
     document.getElementById('sm-num').value='';
@@ -1179,6 +1184,7 @@ function openSocioForm(num){
     document.getElementById('sm-nombre').value='';
     document.getElementById('sm-apellidos').value='';
     document.getElementById('sm-dni').value='';
+    document.getElementById('sm-tel').value='';
   }
   document.getElementById('socio-modal').classList.add('show');
 }
@@ -1194,6 +1200,11 @@ function saveSocio(){
   if(!editingSocio&&SOCIOS[num]){err.textContent='Ese número de socio ya existe.';err.style.display='block';return;}
   const initials=((nombre[0]||'')+(apellidos.split(' ')[0]?.[0]||'')).toUpperCase();
   SOCIOS[num]={dni,nombre,apellidos,initials:initials.slice(0,2)||'??',admin:false};
+  // Save tel to Supabase if provided
+  const smTel=document.getElementById('sm-tel').value.replace(/\s/g,'');
+  if(smTel&&(smTel.startsWith('6')||smTel.startsWith('7'))){
+    sb.from('socios').upsert({socio_num:num,tel:smTel},{onConflict:'socio_num'});
+  }
   closeSocioModal();renderSociosList();
   showToast(editingSocio?'✓ Socio actualizado':'✓ Socio añadido');
 }
