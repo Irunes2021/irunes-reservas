@@ -390,7 +390,7 @@
           <span id="f-coms-max" style="font-size:.7rem;color:var(--text-muted);margin-left:.25rem">máx. 10</span>
         </div>
       </div>
-      <div class="form-row"><label>Observaciones (opcional)</label><input type="text" id="f-obs" placeholder="Alergias, ocasión especial…"></div>
+      <div class="form-row"><label>Observaciones (opcional)</label><input type="text" id="f-obs" placeholder="Reunión, cumpleaños, ocasión especial…"></div>
       <button class="btn-reservar" onclick="openConfirm()">Confirmar reserva →</button>
     </div>
   </div>
@@ -775,7 +775,8 @@ async function doLogin(){
   btn.innerHTML='<span class="spinner"></span>Entrando…';
   btn.disabled=true;
   showLoading('Cargando reservas…');
-  await Promise.all([loadReservas(),loadSocioTel()]);
+  await loadReservas();
+  await loadSocioTel();
   hideLoading();
   cu=u;
   document.getElementById('user-avatar').textContent=s.initials;
@@ -1419,10 +1420,12 @@ function pickKioskCalDay(ds){
 
 // -- TELEFONOS SOCIOS ------------------------------------
 async function loadSocioTel(){
+  if(!cu)return;
   const {data}=await sb.from('socios').select('tel').eq('socio_num',cu).single();
   if(data&&data.tel){
     socioTel=data.tel;
-    document.getElementById('f-tel').value=data.tel;
+    const telField=document.getElementById('f-tel');
+    if(telField&&!telField.value) telField.value=data.tel;
   }
 }
 async function saveSocioTel(tel){
