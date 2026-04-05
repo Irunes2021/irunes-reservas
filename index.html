@@ -746,7 +746,7 @@ const MESA_MAX={1:9,2:9,3:9,4:11};
 const FILL={libre:'#D4A83C',occupied:'#B03020',mia:'#A88830'};
 
 // ── ESTADO ───────────────────────────────────────────
-let cu=null, cDate=new Date(), cTurno='comida', selMesas=[];
+let cu=null, cDate=new Date(), cTurno='comida', selMesas=[], socioTel='';
 let coms=8, adminComs=8, aFilter='todos', editingSocio=null;
 let reservas=[]; // cargadas desde Supabase
 let calViewDate=new Date();
@@ -774,12 +774,12 @@ async function doLogin(){
   btn.innerHTML='<span class="spinner"></span>Entrando…';
   btn.disabled=true;
   showLoading('Cargando reservas…');
-  await loadReservas();
+  await Promise.all([loadReservas(),loadSocioTel()]);
   hideLoading();
   cu=u;
   document.getElementById('user-avatar').textContent=s.initials;
   document.getElementById('f-nombre').value=sN(u);
-  if(s.tel) document.getElementById('f-tel').value=s.tel;
+  
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app-screen').style.display='block';
   btn.innerHTML='Entrar'; btn.disabled=false;
@@ -1001,6 +1001,7 @@ async function doReserva(){
   }
   btn.disabled=false;btn.textContent='Confirmar';
   const numMesas=selMesas.length;
+  saveSocioTel(document.getElementById('f-tel').value);
   closeConfirm();selMesas=[];
   document.getElementById('reserva-form').classList.remove('visible');
   document.getElementById('f-tel').value='';
@@ -1334,7 +1335,7 @@ function doKioskLogin(){
   // Pre-fill the main app and go to reserva tab
   cu=u;
   document.getElementById('f-nombre').value=sN(u);
-  if(s.tel) document.getElementById('f-tel').value=s.tel;
+  
   document.getElementById('user-avatar').textContent=s.initials;
   // Exit kiosk temporarily, go to plano
   exitKiosk();
@@ -1404,6 +1405,23 @@ function pickKioskCalDay(ds){
   renderKioskDate();renderKioskFloor();renderKioskRight();
 }
 
+
+// -- TELEFONOS SOCIOS ------------------------------------
+async function loadSocioTel(){
+  const {data}=await sb.from('socios').select('tel').eq('socio_num',cu).single();
+  if(data&&data.tel){
+    socioTel=data.tel;
+    document.getElementById('f-tel').value=data.tel;
+  }
+}
+async function saveSocioTel(tel){
+  if(!tel||!tel.trim())return;
+  // Only save mobile numbers
+  const t=tel.replace(/\s/g,'');
+  if(!t.startsWith('6')&&!t.startsWith('7'))return;
+  await sb.from('socios').upsert({socio_num:cu,tel:t},{onConflict:'socio_num'});
+  socioTel=t;
+}
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;t.classList.add('show');
