@@ -655,7 +655,6 @@ async function doLogin(){
   btn.innerHTML='<span class="spinner"></span>Entrando…';
   btn.disabled=true;
   showLoading('Cargando reservas…');
-  if(Object.keys(SOCIOS).length===0) await loadSocios();
   await loadReservas();
   hideLoading();
   cu=u;
@@ -681,15 +680,7 @@ renderDate();renderFloor();renderStatus();
 }
 document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 
-// Auto-kiosk mode if URL has ?modo=quiosco
-if(new URLSearchParams(window.location.search).get('modo')==='quiosco'){
-  document.getElementById('btn-inicio').style.display='block';
-  (async function(){
-    if(Object.keys(SOCIOS).length===0) await loadSocios();
-    await loadReservas();
-    enterKiosk();
-  })();
-}
+// Auto-kiosk: gestionado en el arranque principal
 
 function doLogout(){
   cu=null;selMesas=[];coms=8;reservas=[];
@@ -1470,10 +1461,20 @@ function renderLimpieza(todas, today, maxD){
   document.getElementById('limp-body').innerHTML = html;
 }
 
-// Auto-arranque modo limpieza
-if(new URLSearchParams(window.location.search).get('modo')==='limpieza'){
-  enterLimpieza();
-}
+// Arranque: cargar socios y luego iniciar
+(async function(){
+  showLoading('Cargando…');
+  await loadSocios();
+  hideLoading();
+  const modo=new URLSearchParams(window.location.search).get('modo');
+  if(modo==='quiosco'){
+    document.getElementById('btn-inicio').style.display='block';
+    await loadReservas();
+    enterKiosk();
+  } else if(modo==='limpieza'){
+    enterLimpieza();
+  }
+})();
 
 renderDate();
 </script>
