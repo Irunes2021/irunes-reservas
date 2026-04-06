@@ -796,7 +796,14 @@ async function doLogin(){
     newEl.onclick=function(){handleClick(id);};
     el.parentNode.replaceChild(newEl,el);
   });
-  renderDate();renderFloor();renderStatus();
+  // Auto-kiosk mode if URL has ?modo=quiosco
+if(new URLSearchParams(window.location.search).get('modo')==='quiosco'){
+  // Load reservas first then enter kiosk
+  loadReservas().then(function(){
+    enterKiosk();
+  });
+}
+renderDate();renderFloor();renderStatus();
 }
 document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 
