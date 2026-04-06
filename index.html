@@ -747,7 +747,7 @@ const MESA_MAX={1:9,2:9,3:9,4:11};
 const FILL={libre:'#D4A83C',occupied:'#B03020',mia:'#A88830'};
 
 // ── ESTADO ───────────────────────────────────────────
-let cu=null, cDate=new Date(), cTurno='comida', selMesas=[], socioTel='';
+let cu=null, cDate=new Date(), cTurno='comida', selMesas=[], socioTel='', enModoQuiosco=false;
 let coms=8, adminComs=8, aFilter='todos', editingSocio=null;
 let reservas=[]; // cargadas desde Supabase
 let calViewDate=new Date();
@@ -1228,7 +1228,7 @@ function switchTab(tab){
 // ── KIOSK MODE ─────────────────────────────────────────────
 let kioskChannel=null, kioskDate=new Date(), _reservaGroups={};
 
-function enterKiosk(){kioskDate=new Date();
+function enterKiosk(){enModoQuiosco=true;kioskDate=new Date();
   // Copy logo into kiosk
   const logoImg=document.querySelector('.emblem-logo img');
   if(logoImg) document.getElementById('kiosk-logo-wrap').innerHTML=logoImg.outerHTML;
@@ -1241,7 +1241,7 @@ function enterKiosk(){kioskDate=new Date();
   window._kioskInterval=setInterval(()=>{renderKioskDate();renderKioskFloor();renderKioskRight();},60000);
 }
 
-function exitKiosk(){
+function exitKiosk(){enModoQuiosco=false;
   document.getElementById('kiosk-screen').classList.remove('show');
   if(kioskChannel){sb.removeChannel(kioskChannel);kioskChannel=null;}
   clearInterval(window._kioskInterval);
