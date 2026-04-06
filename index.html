@@ -1230,12 +1230,6 @@ let kioskChannel=null, kioskDate=new Date(), _reservaGroups={};
 
 function enterKiosk(){
   enModoQuiosco=true;
-  // Reset all user session data before entering kiosk
-  cu=null;socioTel='';reservas=[];selMesas=[];coms=8;
-  document.getElementById('admin-badge').style.display='none';
-  document.querySelectorAll('.admin-only').forEach(el=>{el.style.display='none';el.style.visibility='hidden';});
-  document.getElementById('app-screen').style.display='none';
-  document.getElementById('login-screen').style.display='flex';
   kioskDate=new Date();
   // Copy logo into kiosk
   const logoImg=document.querySelector('.emblem-logo img');
@@ -1353,28 +1347,31 @@ function doKioskLogin(){
     document.getElementById('kiosk-error').style.display='block';return;
   }
   closeKioskLogin();
+  // Save admin session
+  const prevCu=cu;
+  const prevReservas=reservas.slice();
+  // Set kiosk user
   cu=u;
-  // Hide kiosk screen, show app
+  document.getElementById('f-nombre').value=sN(u);
+  document.getElementById('user-avatar').textContent=s.initials;
+  document.getElementById('admin-badge').style.display='none';
+  // Hide admin tabs
+  document.querySelectorAll('.tab').forEach(function(tab){
+    tab.dataset.prevDisplay=tab.style.display;
+    if(tab.classList.contains('admin-only')) tab.style.display='none';
+  });
+  // Show app without admin
   document.getElementById('kiosk-screen').classList.remove('show');
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app-screen').style.display='block';
-  document.getElementById('f-nombre').value=sN(u);
-  document.getElementById('user-avatar').textContent=s.initials;
-  // NEVER show admin tabs in kiosk mode
-  document.getElementById('admin-badge').style.display='none';
-  document.querySelectorAll('.tab').forEach(function(tab){
-    if(tab.textContent.trim().includes('Admin')||tab.textContent.trim().includes('Socios')){
-      tab.style.display='none';
-    }
-  });
-  // Load reservas and render
+  // Load reservas for kiosk user
   loadReservas().then(function(){
     renderDate();renderFloor();renderStatus();renderCalGrid();
   });
   loadSocioTel();
   [1,2,3,4].forEach(id=>document.getElementById('mesa-'+id).addEventListener('click',()=>handleClick(id)));
   switchTab('plano');
-  // Back to kiosk button
+  // Back button - restore admin session
   const oldBtn=document.getElementById('back-to-kiosk');
   if(oldBtn)oldBtn.remove();
   const backBtn=document.createElement('button');
@@ -1383,9 +1380,20 @@ function doKioskLogin(){
   backBtn.style.cssText='position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);background:var(--dark);color:var(--gold);border:1px solid rgba(201,168,76,.3);border-radius:20px;padding:.5rem 1.2rem;font-family:DM Sans,sans-serif;font-size:.78rem;cursor:pointer;z-index:99;';
   backBtn.onclick=function(){
     backBtn.remove();
-    cu=null;reservas=[];selMesas=[];
-    document.getElementById('app-screen').style.display='none';
+    // Restore admin session
+    cu=prevCu;
+    reservas=prevReservas;
     document.getElementById('reserva-form').classList.remove('visible');
+    selMesas=[];
+    document.getElementById('app-screen').style.display='none';
+    // Restore admin tabs
+    document.querySelectorAll('.tab').forEach(function(tab){
+      if(tab.dataset.prevDisplay!==undefined) tab.style.display=tab.dataset.prevDisplay;
+    });
+    if(prevCu){
+      document.getElementById('admin-badge').style.display='inline';
+      document.querySelectorAll('.admin-only').forEach(el=>el.style.display='flex');
+    }
     enterKiosk();
   };
   document.body.appendChild(backBtn);
