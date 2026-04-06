@@ -789,7 +789,13 @@ async function doLogin(){
     document.getElementById('admin-badge').style.display='inline';
     document.querySelectorAll('.admin-only').forEach(el=>el.style.display='flex');
   }
-  [1,2,3,4].forEach(id=>document.getElementById('mesa-'+id).addEventListener('click',()=>handleClick(id)));
+  // Remove and re-add click handlers for mesas
+  [1,2,3,4].forEach(function(id){
+    const el=document.getElementById('mesa-'+id);
+    const newEl=el.cloneNode(true);
+    newEl.onclick=function(){handleClick(id);};
+    el.parentNode.replaceChild(newEl,el);
+  });
   renderDate();renderFloor();renderStatus();
 }
 document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
@@ -1369,7 +1375,13 @@ function doKioskLogin(){
     renderDate();renderFloor();renderStatus();renderCalGrid();
   });
   loadSocioTel();
-  [1,2,3,4].forEach(id=>document.getElementById('mesa-'+id).addEventListener('click',()=>handleClick(id)));
+  // Remove and re-add click handlers for mesas
+  [1,2,3,4].forEach(function(id){
+    const el=document.getElementById('mesa-'+id);
+    const newEl=el.cloneNode(true);
+    newEl.onclick=function(){handleClick(id);};
+    el.parentNode.replaceChild(newEl,el);
+  });
   switchTab('plano');
   // Back button - restore admin session
   const oldBtn=document.getElementById('back-to-kiosk');
