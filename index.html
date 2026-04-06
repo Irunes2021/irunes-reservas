@@ -1148,12 +1148,7 @@ async function doAdminCreate(){
 }
 
 // ── GESTIÓN SOCIOS ───────────────────────────────────
-async function renderSociosList(){
-  // Load tels from Supabase first
-  const {data:tels}=await sb.from('socios').select('socio_num,tel');
-  if(tels) tels.forEach(function(row){
-    if(SOCIOS[row.socio_num]) SOCIOS[row.socio_num].tel=row.tel||'';
-  });
+function renderSociosList(){
   const q=(document.getElementById('socio-search')?.value||'').toLowerCase().trim();
   const entries=Object.entries(SOCIOS).filter(([k,v])=>!v.admin)
     .filter(([k,v])=>!q||k.includes(q)||v.nombre.toLowerCase().includes(q)||v.apellidos.toLowerCase().includes(q))
