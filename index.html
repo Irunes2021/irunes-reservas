@@ -252,6 +252,28 @@
   .btn-inicio{position:fixed;top:.6rem;left:.75rem;background:rgba(26,18,8,.85);color:var(--gold);border:1px solid rgba(201,168,76,.3);border-radius:20px;padding:.35rem .85rem;font-family:'DM Sans',sans-serif;font-size:.75rem;cursor:pointer;z-index:400;display:none;backdrop-filter:blur(4px);text-decoration:none;}
   .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(100px);background:var(--dark);color:var(--gold);padding:.7rem 1.4rem;border-radius:100px;font-size:.83rem;font-weight:500;border:1px solid rgba(201,168,76,.3);transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:1000;white-space:nowrap;}
   .toast.show{transform:translateX(-50%) translateY(0);}
+
+  /* MODO LIMPIEZA */
+  #limpieza-screen{display:none;min-height:100vh;background:var(--cream);flex-direction:column;}
+  #limpieza-screen.show{display:flex;}
+  .limp-header{background:var(--dark);padding:1.1rem 1.25rem;text-align:center;}
+  .limp-header h1{font-family:'Playfair Display',serif;color:var(--gold);font-size:1.2rem;font-weight:400;}
+  .limp-header p{color:rgba(255,255,255,.4);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;margin-top:.2rem;}
+  .limp-body{padding:1rem;flex:1;}
+  .limp-day{margin-bottom:1.25rem;}
+  .limp-day-title{font-family:'Playfair Display',serif;font-size:1rem;color:var(--dark);background:var(--border);border-radius:10px;padding:.5rem 1rem;margin-bottom:.5rem;display:flex;align-items:center;justify-content:space-between;}
+  .limp-day-title span{font-size:.7rem;color:var(--text-muted);font-family:'DM Sans',sans-serif;}
+  .limp-turno{margin-bottom:.5rem;}
+  .limp-turno-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:.3rem;padding-left:.25rem;}
+  .limp-reserva{background:#fff;border:1px solid var(--border);border-radius:10px;padding:.65rem 1rem;margin-bottom:.35rem;display:flex;align-items:center;gap:.75rem;}
+  .limp-mesa-badge{background:var(--dark);color:var(--gold);border-radius:8px;padding:.3rem .6rem;font-family:'Playfair Display',serif;font-size:.9rem;white-space:nowrap;flex-shrink:0;}
+  .limp-info{flex:1;min-width:0;}
+  .limp-coms{font-size:.88rem;font-weight:500;color:var(--dark);}
+  .limp-obs{font-size:.75rem;color:var(--text-muted);margin-top:.1rem;font-style:italic;}
+  .limp-empty{text-align:center;padding:3rem 1rem;color:var(--text-muted);}
+  .limp-empty .limp-icon{font-size:2.5rem;margin-bottom:.75rem;}
+  .limp-live{display:flex;align-items:center;justify-content:center;gap:.4rem;font-size:.68rem;color:var(--text-muted);padding:1rem;}
+  .limp-live-dot{width:6px;height:6px;border-radius:50%;background:#27AE60;animation:pulse 2s infinite;}
 </style>
 </head>
 <body>
@@ -571,6 +593,17 @@
 </div>
 
 <a class="btn-inicio" id="btn-inicio" href="https://inicio.ccirunes.com">← Inicio</a>
+
+<!-- MODO LIMPIEZA -->
+<div id="limpieza-screen">
+  <div class="limp-header">
+    <h1>🧹 Reservas — Limpieza</h1>
+    <p>Próximos 7 días · Club Ciclista Irunes</p>
+  </div>
+  <div class="limp-body" id="limp-body"></div>
+  <div class="limp-live"><div class="limp-live-dot"></div>Actualización en tiempo real</div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1497,6 +1530,78 @@ function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ── MODO LIMPIEZA ─────────────────────────────────────
+async function enterLimpieza(){
+  // Cargar reservas de los próximos 7 días
+  const today = new Date(); today.setHours(0,0,0,0);
+  const maxD = new Date(today); maxD.setDate(today.getDate()+6);
+  const todayStr = fmt(today);
+  const maxStr = fmt(maxD);
+  const {data,error} = await sb.from('reservas').select('*')
+    .gte('fecha',todayStr).lte('fecha',maxStr)
+    .order('fecha').order('turno').order('mesa');
+  const todas = data||[];
+
+  // Renderizar
+  renderLimpieza(todas, today, maxD);
+
+  // Mostrar pantalla
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('limpieza-screen').classList.add('show');
+
+  // Realtime
+  sb.channel('limp-changes')
+    .on('postgres_changes',{event:'*',schema:'public',table:'reservas'},async()=>{
+      const {data} = await sb.from('reservas').select('*')
+        .gte('fecha',todayStr).lte('fecha',maxStr)
+        .order('fecha').order('turno').order('mesa');
+      renderLimpieza(data||[], today, maxD);
+    })
+    .subscribe();
+}
+
+function renderLimpieza(todas, today, maxD){
+  const TURNOS = ['comida','merienda','cena'];
+  const TL2 = {comida:'🍽️ Comida',merienda:'☕ Merienda',cena:'🌙 Cena'};
+  let html = '';
+  let d = new Date(today);
+  while(d <= maxD){
+    const ds = fmt(d);
+    const esHoy = ds === fmt(today);
+    const dayReservas = todas.filter(r=>r.fecha===ds);
+    const dayLabel = DIAS[d.getDay()]+', '+d.getDate()+' de '+MESES[d.getMonth()];
+    html += '<div class="limp-day">';
+    html += '<div class="limp-day-title">'+dayLabel+(esHoy?' <span>HOY</span>':'')+'</div>';
+    if(dayReservas.length===0){
+      html += '<div style="font-size:.78rem;color:var(--text-muted);padding:.25rem .5rem;">Sin reservas</div>';
+    } else {
+      TURNOS.forEach(function(t){
+        const tr = dayReservas.filter(r=>r.turno===t);
+        if(tr.length===0) return;
+        html += '<div class="limp-turno">';
+        html += '<div class="limp-turno-label">'+TL2[t]+'</div>';
+        tr.forEach(function(r){
+          html += '<div class="limp-reserva">';
+          html += '<div class="limp-mesa-badge">Mesa '+r.mesa+'</div>';
+          html += '<div class="limp-info">';
+          html += '<div class="limp-coms">'+r.comensales+' comensales</div>';
+          if(r.obs&&r.obs.trim()) html += '<div class="limp-obs">'+r.obs+'</div>';
+          html += '</div></div>';
+        });
+        html += '</div>';
+      });
+    }
+    html += '</div>';
+    d.setDate(d.getDate()+1);
+  }
+  document.getElementById('limp-body').innerHTML = html;
+}
+
+// Auto-arranque modo limpieza
+if(new URLSearchParams(window.location.search).get('modo')==='limpieza'){
+  enterLimpieza();
 }
 
 renderDate();
