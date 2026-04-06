@@ -800,24 +800,11 @@ async function doLogin(){
   });
   // Auto-kiosk mode if URL has ?modo=quiosco
 if(new URLSearchParams(window.location.search).get('modo')==='quiosco'){
-  // Load reservas first then enter kiosk
+  document.getElementById('btn-inicio').style.display='block';
   loadReservas().then(function(){
     enterKiosk();
   });
 }
-// Show home button if coming from terminal or kiosk mode
-(function(){
-  const params=new URLSearchParams(window.location.search);
-  const ref=document.referrer;
-  if(params.get('modo')==='quiosco'||ref.includes('inicio.ccirunes')||ref.includes('ccirunes.com')){
-    document.getElementById('btn-inicio').style.display='block';
-    // Keep it visible even after navigation
-    sessionStorage.setItem('fromInicio','1');
-  }
-  if(sessionStorage.getItem('fromInicio')==='1'){
-    document.getElementById('btn-inicio').style.display='block';
-  }
-})();
 renderDate();renderFloor();renderStatus();
 }
 document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
