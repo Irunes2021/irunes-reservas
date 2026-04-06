@@ -1250,7 +1250,7 @@ let kioskChannel=null, kioskDate=new Date(), _reservaGroups={};
 
 function enterKiosk(){
   enModoQuiosco=true;
-  kioskDate=new Date();
+  kioskDate=new Date();kioskDate.setHours(0,0,0,0);
   // Copy logo into kiosk
   const logoImg=document.querySelector('.emblem-logo img');
   if(logoImg) document.getElementById('kiosk-logo-wrap').innerHTML=logoImg.outerHTML;
