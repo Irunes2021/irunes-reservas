@@ -798,16 +798,17 @@ async function doLogin(){
     newEl.onclick=function(){handleClick(id);};
     el.parentNode.replaceChild(newEl,el);
   });
-  // Auto-kiosk mode if URL has ?modo=quiosco
+renderDate();renderFloor();renderStatus();
+}
+document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+// Auto-kiosk mode if URL has ?modo=quiosco
 if(new URLSearchParams(window.location.search).get('modo')==='quiosco'){
   document.getElementById('btn-inicio').style.display='block';
   loadReservas().then(function(){
     enterKiosk();
   });
 }
-renderDate();renderFloor();renderStatus();
-}
-document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 
 function doLogout(){
   cu=null;selMesas=[];coms=8;reservas=[];
