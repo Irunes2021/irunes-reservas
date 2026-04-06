@@ -1160,7 +1160,11 @@ function renderSociosList(){
     entries.map(([num,s])=>
       '<div class="socio-item">'+
       '<div class="socio-num">'+parseInt(num)+'</div>'+
-      '<div class="socio-info"><div class="socio-name">'+s.nombre+' '+s.apellidos+'</div><div class="socio-dni">DNI: '+s.dni+'</div></div>'+
+      '<div class="socio-info">'+
+        '<div class="socio-name">'+s.nombre+' '+s.apellidos+'</div>'+
+        '<div class="socio-dni">DNI: '+s.dni+'</div>'+
+        (s.tel?'<div class="socio-dni" style="color:#27AE60">📞 '+s.tel+'</div>':'<div class="socio-dni" style="color:#bbb">Sin móvil</div>')+
+      '</div>'+
       '<div class="socio-actions">'+
       '<button class="btn-edit" onclick="openSocioForm(\''+num+'\')">Editar</button>'+
       '<button class="btn-del" onclick="deleteSocio(\''+num+'\')">✕</button>'+
