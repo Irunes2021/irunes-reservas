@@ -1148,17 +1148,11 @@ async function doAdminCreate(){
 }
 
 // ── GESTIÓN SOCIOS ───────────────────────────────────
-function renderSociosList(){
-  // Load tels from Supabase and update display
-  sb.from('socios').select('socio_num,tel').then(function({data}){
-    if(data) data.forEach(function(row){
-      if(SOCIOS[row.socio_num]) SOCIOS[row.socio_num].tel=row.tel||'';
-      const el=document.getElementById('tel-'+row.socio_num);
-      if(el){
-        if(row.tel){el.textContent='📞 '+row.tel;el.style.color='var(--green)';}
-        else{el.textContent='Sin móvil';el.style.color='rgba(0,0,0,.25)';}
-      }
-    });
+async function renderSociosList(){
+  // Load tels from Supabase first
+  const {data:tels}=await sb.from('socios').select('socio_num,tel');
+  if(tels) tels.forEach(function(row){
+    if(SOCIOS[row.socio_num]) SOCIOS[row.socio_num].tel=row.tel||'';
   });
   const q=(document.getElementById('socio-search')?.value||'').toLowerCase().trim();
   const entries=Object.entries(SOCIOS).filter(([k,v])=>!v.admin)
