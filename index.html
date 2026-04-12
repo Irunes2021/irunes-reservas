@@ -645,7 +645,6 @@ const TL={comida:'Comida 🍽️',merienda:'Merienda ☕',cena:'Cena 🌙'};
 const COL={libre:'#27AE60',occupied:'#C0392B',mia:'#85C1E9'};
 const MESA_MAX={1:9,2:9,3:9,4:11,5:12};
 const MESA_EXTERIOR=5;
-const MESES_EXTERIOR=[3,4,5,6,7,8,9]; // abril(3) a octubre(9)
 const FILL={libre:'#2E86C1',occupied:'#C0392B',mia:'#1A5276'};
 
 // ── ESTADO ───────────────────────────────────────────
@@ -656,8 +655,7 @@ let calViewDate=new Date();
 
 function fmt(d){return d.toISOString().slice(0,10);}
 function getMesasActivas(){
-  const m=new Date().getMonth();
-  return MESES_EXTERIOR.includes(m)?[1,2,3,4,5]:[1,2,3,4];
+  return [1,2,3,4,5];
 }
 function sN(id){const s=SOCIOS[id];return s?s.nombre+' '+s.apellidos:'';}
 function isAdmin(){return SOCIOS[cu]?.admin;}
@@ -696,7 +694,7 @@ async function doLogin(){
     document.querySelectorAll('.admin-only').forEach(el=>el.style.display='flex');
   }
   // Remove and re-add click handlers for mesas
-  [1,2,3,4].forEach(function(id){
+  [1,2,3,4,5].forEach(function(id){
     const el=document.getElementById('mesa-'+id);
     const newEl=el.cloneNode(true);
     newEl.onclick=function(){handleClick(id);};
@@ -838,10 +836,8 @@ function renderFloor(){
     const el=document.getElementById('mesa-'+id);
     if(!el)return;
     if(id===MESA_EXTERIOR){
-      const visible=MESES_EXTERIOR.includes(new Date().getMonth());
       const grp=document.getElementById('terraza-ext');
-      if(grp) grp.style.display=visible?'':'none';
-      if(!visible)return;
+      if(grp) grp.style.display='';
     }
     const res=getRes(id,cTurno,f);
     const libre=!res,esMia=res&&res.socio_num===cu;
