@@ -359,17 +359,19 @@
         </defs>
 
         <!-- TERRAZA EXTERIOR (arriba, conectada al edificio por la cocina) -->
-        <rect x="170" y="8" width="162" height="120" rx="6" fill="url(#tile-ext)" stroke="#27AE60" stroke-width="2" stroke-dasharray="8,4"/>
-        <text x="251" y="26" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10" font-weight="600" fill="#1E8449" letter-spacing="2">☀️ TERRAZA EXTERIOR</text>
-        <!-- Mesa 5 exterior -->
-        <g id="mesa-5" style="cursor:pointer">
-          <rect id="m5-bg" x="183" y="36" width="136" height="78" rx="5" fill="#2E86C1" stroke="#27AE60" stroke-width="3"/>
-          <text id="m5-label" x="251" y="72" text-anchor="middle" font-family="Playfair Display,serif" font-size="17" fill="#fff">Mesa Ext.</text>
-          <text id="m5-sub" x="251" y="90" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10" fill="rgba(255,255,255,.85)"></text>
+        <g id="terraza-ext">
+          <rect x="170" y="8" width="162" height="120" rx="6" fill="url(#tile-ext)" stroke="#27AE60" stroke-width="2" stroke-dasharray="8,4"/>
+          <text x="251" y="26" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10" font-weight="600" fill="#1E8449" letter-spacing="2">☀️ TERRAZA EXTERIOR</text>
+          <!-- Mesa 5 exterior -->
+          <g id="mesa-5" style="cursor:pointer">
+            <rect id="m5-bg" x="183" y="36" width="136" height="78" rx="5" fill="#2E86C1" stroke="#27AE60" stroke-width="3"/>
+            <text id="m5-label" x="251" y="72" text-anchor="middle" font-family="Playfair Display,serif" font-size="17" fill="#fff">Mesa Ext.</text>
+            <text id="m5-sub" x="251" y="90" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10" fill="rgba(255,255,255,.85)"></text>
+          </g>
+          <!-- Puerta entre terraza y cocina (esquina superior derecha de cocina) -->
+          <rect x="280" y="127" width="52" height="10" rx="3" fill="#27AE60" opacity=".8"/>
+          <text x="306" y="123" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#1E8449" font-weight="600">🚪 acceso terraza</text>
         </g>
-        <!-- Puerta entre terraza y cocina (esquina superior derecha de cocina) -->
-        <rect x="280" y="127" width="52" height="10" rx="3" fill="#27AE60" opacity=".8"/>
-        <text x="306" y="123" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#1E8449" font-weight="600">🚪 acceso terraza</text>
 
         <!-- EDIFICIO INTERIOR -->
         <rect x="8" y="136" width="324" height="556" fill="url(#tile)" stroke="#2E86C1" stroke-width="3.5"/>
@@ -643,7 +645,7 @@ const TL={comida:'Comida 🍽️',merienda:'Merienda ☕',cena:'Cena 🌙'};
 const COL={libre:'#27AE60',occupied:'#C0392B',mia:'#85C1E9'};
 const MESA_MAX={1:9,2:9,3:9,4:11,5:12};
 const MESA_EXTERIOR=5;
-const MESES_EXTERIOR=[4,5,6,7,8,9]; // mayo(4) a octubre(9)
+const MESES_EXTERIOR=[3,4,5,6,7,8,9]; // abril(3) a octubre(9)
 const FILL={libre:'#2E86C1',occupied:'#C0392B',mia:'#1A5276'};
 
 // ── ESTADO ───────────────────────────────────────────
@@ -837,7 +839,8 @@ function renderFloor(){
     if(!el)return;
     if(id===MESA_EXTERIOR){
       const visible=MESES_EXTERIOR.includes(new Date().getMonth());
-      el.style.display=visible?'block':'none';
+      const grp=document.getElementById('terraza-ext');
+      if(grp) grp.style.display=visible?'':'none';
       if(!visible)return;
     }
     const res=getRes(id,cTurno,f);
