@@ -445,6 +445,13 @@
   <div id="tab-mias" class="content" style="display:none">
     <div class="section-title">Mis próximas reservas</div>
     <div id="mis-reservas-list"></div>
+    <div id="mis-reservas-pasadas-section" style="display:none;margin-top:1.25rem;">
+      <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="togglePasadas()">
+        <span>Reservas pasadas</span>
+        <span id="toggle-pasadas-icon" style="font-size:.85rem;color:var(--text-muted)">▼</span>
+      </div>
+      <div id="mis-reservas-pasadas-list" style="display:none"></div>
+    </div>
   </div>
 
   <!-- ADMIN -->
@@ -754,9 +761,14 @@ async function loadSocios(){
 
 async function loadReservas(){
   const today=fmt(new Date());
-  const {data,error}=await sb.from('reservas').select('*').gte('fecha',today).order('fecha').order('turno');
-  if(error){console.error(error);showToast('Error al cargar reservas');return;}
-  reservas=data||[];
+  const pastStart=new Date();pastStart.setFullYear(pastStart.getFullYear()-1);
+  const pastStr=fmt(pastStart);
+  const [r1,r2]=await Promise.all([
+    sb.from('reservas').select('*').gte('fecha',today).order('fecha').order('turno'),
+    sb.from('reservas').select('*').gte('fecha',pastStr).lt('fecha',today).order('fecha','desc')
+  ]);
+  if(r1.error){console.error(r1.error);showToast('Error al cargar reservas');return;}
+  reservas=(r1.data||[]).concat(r2.data||[]);
 }
 
 async function saveReserva(r){
@@ -961,40 +973,70 @@ async function doReserva(){
 }
 
 // ── MIS RESERVAS ─────────────────────────────────────
-function renderMisReservas(){
-  const today=fmt(new Date());
-  const mias=reservas.filter(r=>r.socio_num===cu&&r.fecha>=today).sort((a,b)=>a.fecha.localeCompare(b.fecha)||['comida','merienda','cena'].indexOf(a.turno)-['comida','merienda','cena'].indexOf(b.turno));
-  const list=document.getElementById('mis-reservas-list');
-  if(!mias.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">📅</div><p>No tienes reservas próximas.</p></div>';return;}
+function buildReservaGroupHTML(group, showCancel){
+  const first=group[0];
+  const d=new Date(first.fecha+'T12:00:00');
+  const mesas=group.map(r=>r.mesa).sort().join(' + ');
+  const mesaLabel=group.length>1?'Mesas '+mesas:'Mesa '+mesas;
+  const totalComs=group[0].comensales;
+  const gkey='g'+group[0].id.replace(/-/g,'').slice(0,8);
+  if(showCancel) _reservaGroups[gkey]=group.map(r=>r.id);
+  return '<div class="reserva-item">'+
+    '<div class="reserva-date-box"><div class="rday">'+d.getDate()+'</div><div class="rmonth">'+MESES_C[d.getMonth()]+'</div></div>'+
+    '<div class="reserva-info">'+
+    '<div class="mesa-name">'+mesaLabel+'</div>'+
+    '<div class="reserva-meta">'+totalComs+' comensales · <span class="reserva-turno">'+TL[first.turno]+'</span></div>'+
+    (first.tel?'<div class="reserva-meta">📞 '+first.tel+'</div>':'')+
+    (first.obs?'<div class="reserva-meta">📝 '+first.obs+'</div>':'')+
+    '</div>'+
+    (showCancel?'<button class="btn-cancelar" data-gkey="'+gkey+'" onclick="doCancel(this)">Cancelar</button>':
+    '<span style="font-size:.68rem;color:var(--text-muted);flex-shrink:0">Pasada</span>')+
+    '</div>';
+}
 
-  // Group by fecha+turno
+function groupReservas(list){
   const groups={};
-  mias.forEach(r=>{
+  list.forEach(r=>{
     const key=r.fecha+'_'+r.turno;
     if(!groups[key]) groups[key]=[];
     groups[key].push(r);
   });
+  return Object.values(groups);
+}
 
-  list.innerHTML=Object.values(groups).map(group=>{
-    const first=group[0];
-    const d=new Date(first.fecha+'T12:00:00');
-    const mesas=group.map(r=>r.mesa).sort().join(' + ');
-    const mesaLabel=group.length>1?'Mesas '+mesas:'Mesa '+mesas;
-    const totalComs=group[0].comensales; // All mesas store same total
-    const ids=group.map(r=>r.id);
-    const gkey='g'+group[0].id.replace(/-/g,'').slice(0,8);
-    _reservaGroups[gkey]=ids;
-    return '<div class="reserva-item">'+
-      '<div class="reserva-date-box"><div class="rday">'+d.getDate()+'</div><div class="rmonth">'+MESES_C[d.getMonth()]+'</div></div>'+
-      '<div class="reserva-info">'+
-      '<div class="mesa-name">'+mesaLabel+'</div>'+
-      '<div class="reserva-meta">'+totalComs+' comensales · <span class="reserva-turno">'+TL[first.turno]+'</span></div>'+
-      (first.tel?'<div class="reserva-meta">📞 '+first.tel+'</div>':'')+
-      (first.obs?'<div class="reserva-meta">📝 '+first.obs+'</div>':'')+
-      '</div>'+
-      '<button class="btn-cancelar" data-gkey="'+gkey+'" onclick="doCancel(this)">Cancelar</button>'+
-      '</div>';
-  }).join('');
+function renderMisReservas(){
+  const today=fmt(new Date());
+  const TURNO_ORDER=['comida','merienda','cena'];
+  const sortFn=(a,b)=>a[0].fecha.localeCompare(b[0].fecha)||TURNO_ORDER.indexOf(a[0].turno)-TURNO_ORDER.indexOf(b[0].turno);
+
+  // Próximas
+  const proximas=reservas.filter(r=>r.socio_num===cu&&r.fecha>=today).sort((a,b)=>a.fecha.localeCompare(b.fecha)||TURNO_ORDER.indexOf(a.turno)-TURNO_ORDER.indexOf(b.turno));
+  const list=document.getElementById('mis-reservas-list');
+  if(!proximas.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">📅</div><p>No tienes reservas próximas.</p></div>';}
+  else {
+    const groups=groupReservas(proximas).sort(sortFn);
+    list.innerHTML=groups.map(g=>buildReservaGroupHTML(g,true)).join('');
+  }
+
+  // Pasadas
+  const pasadas=reservas.filter(r=>r.socio_num===cu&&r.fecha<today).sort((a,b)=>b.fecha.localeCompare(a.fecha)||TURNO_ORDER.indexOf(a.turno)-TURNO_ORDER.indexOf(b.turno));
+  const pasadasSection=document.getElementById('mis-reservas-pasadas-section');
+  const pasadasList=document.getElementById('mis-reservas-pasadas-list');
+  if(pasadas.length){
+    pasadasSection.style.display='block';
+    const groups=groupReservas(pasadas).sort((a,b)=>b[0].fecha.localeCompare(a[0].fecha));
+    pasadasList.innerHTML=groups.map(g=>buildReservaGroupHTML(g,false)).join('');
+  } else {
+    pasadasSection.style.display='none';
+  }
+}
+
+function togglePasadas(){
+  const list=document.getElementById('mis-reservas-pasadas-list');
+  const icon=document.getElementById('toggle-pasadas-icon');
+  const open=list.style.display==='none';
+  list.style.display=open?'block':'none';
+  icon.textContent=open?'▲':'▼';
 }
 
 async function doCancel(el){
