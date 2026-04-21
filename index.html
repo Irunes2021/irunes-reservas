@@ -273,7 +273,7 @@
 
   /* ── TPV LAYOUT ANCHO (≥900px) ── */
   @media screen and (min-width: 900px) {
-    body{max-width:100%;background:var(--cream);}
+    body{max-width:100% !important;background:var(--cream);}
     #app-screen{display:flex;flex-direction:column;height:100vh;}
     .app-header{flex-shrink:0;}
     .tabs{flex-shrink:0;}
@@ -306,10 +306,10 @@
       height:calc(100vh - 88px);
     }
     .floor-wrap{flex:1;margin-bottom:0;width:100%;display:flex;align-items:center;}
-    #floor-svg{height:100% !important;width:100% !important;max-height:none !important;}
+    #floor-svg{height:100% !important;width:auto !important;max-height:900px !important;max-width:100%;}
     .legend{margin-bottom:0;margin-top:.6rem;flex-shrink:0;}
   }
-  @media screen and (max-height: 1024px) {
+  @media screen and (max-height: 1024px) and (max-width: 899px) {
     body{font-size:14px;}
     .app-header{padding:.55rem 1rem;}
     .tabs .tab{padding:.45rem .25rem;font-size:.7rem;}
@@ -425,7 +425,7 @@
   <div id="tab-plano" class="content">
     <div class="tpv-left">
     <div class="floor-wrap">
-      <svg id="floor-svg" viewBox="0 0 340 660" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;max-height:420px;display:block;">
+      <svg id="floor-svg" viewBox="0 0 340 660" xmlns="http://www.w3.org/2000/svg" style="width:auto;height:100%;max-height:850px;display:block;margin:0 auto;">
         <defs>
           <pattern id="tile" width="22" height="22" patternUnits="userSpaceOnUse"><rect width="22" height="22" fill="#EEF4FB"/><rect width="22" height="22" fill="none" stroke="#BDD9F2" stroke-width=".6"/></pattern>
           <pattern id="tile-ext" width="22" height="22" patternUnits="userSpaceOnUse"><rect width="22" height="22" fill="#E8F8F5"/><rect width="22" height="22" fill="none" stroke="#A9DFBF" stroke-width=".6"/></pattern>
