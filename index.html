@@ -274,16 +274,24 @@
   /* ── TPV LAYOUT ANCHO (≥900px) ── */
   @media screen and (min-width: 900px) {
     body{max-width:100% !important;background:var(--cream);}
-    #app-screen{display:flex;flex-direction:column;height:100vh;}
+    #app-screen{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
     .app-header{flex-shrink:0;}
     .tabs{flex-shrink:0;}
     #tab-plano{
-      display:flex !important;
+      display:flex;
       flex-direction:row;
       flex:1;
       padding:0;
       overflow:hidden;
       max-width:100%;
+    }
+    #tab-mias, #tab-admin, #tab-socios{
+      flex:1;
+      overflow-y:auto;
+      max-width:800px;
+      margin:0 auto;
+      width:100%;
+      padding:1.5rem;
     }
     .tpv-left{
       width:58%;
