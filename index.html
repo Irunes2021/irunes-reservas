@@ -308,6 +308,12 @@
     .floor-wrap{flex:1;margin-bottom:0;width:100%;display:flex;align-items:center;}
     #floor-svg{height:100% !important;width:auto !important;max-height:900px !important;max-width:100%;}
     .legend{margin-bottom:0;margin-top:.6rem;flex-shrink:0;}
+    #tab-mias, #tab-admin, #tab-socios{
+      max-width:800px;
+      margin:0 auto;
+      width:100%;
+      padding:1.5rem;
+    }
   }
   @media screen and (max-height: 1024px) and (max-width: 899px) {
     body{font-size:14px;}
@@ -1320,7 +1326,15 @@ async function deleteSocio(num){
 
 // ── TABS ─────────────────────────────────────────────
 function switchTab(tab){
-  ['plano','mias','admin','socios'].forEach(t=>document.getElementById('tab-'+t).style.display=t===tab?'block':'none');
+  const isDesktop = window.innerWidth >= 900;
+  ['plano','mias','admin','socios'].forEach(t=>{
+    const el = document.getElementById('tab-'+t);
+    if(t===tab){
+      el.style.display = (t==='plano' && isDesktop) ? 'flex' : 'block';
+    } else {
+      el.style.display = 'none';
+    }
+  });
   document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['plano','mias','admin','socios'][i]===tab));
   if(tab==='mias')renderMisReservas();
   if(tab==='admin')renderAdminPanel();
