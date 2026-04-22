@@ -184,47 +184,53 @@
   #kiosk-screen{display:none;position:fixed;inset:0;background:var(--dark);z-index:300;flex-direction:row;}
   #kiosk-screen.show{display:flex;}
 
-  /* Left panel - floor plan */
-  .kiosk-left{width:42%;background:#ffffff;display:flex;flex-direction:column;padding:1.5rem;border-right:1px solid rgba(0,0,0,.08);}
-  .kiosk-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+  /* Left panel - floor plan + button */
+  .kiosk-left{width:35%;background:#ffffff;display:flex;flex-direction:column;padding:1.25rem 1.25rem 1rem;border-right:1px solid rgba(0,0,0,.08);}
+  .kiosk-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;}
   .kiosk-logo{display:flex;align-items:center;gap:.75rem;}
   .kiosk-logo img{width:52px;height:52px;object-fit:contain;border-radius:10px;background:#fff;padding:4px;}
-  .kiosk-title{font-family:'Playfair Display',serif;color:var(--dark);font-size:1.1rem;line-height:1.3;}
+  .kiosk-title{font-family:'Playfair Display',serif;color:var(--dark);font-size:1.05rem;line-height:1.3;}
   .kiosk-date{text-align:right;}
   .kiosk-date .kd-day{font-family:'Playfair Display',serif;color:var(--dark);font-size:1.3rem;}
   .kiosk-date .kd-date{font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;}
-  .kiosk-floor{flex:1;display:flex;align-items:center;justify-content:center;}
-  .kiosk-floor svg{width:100%;height:auto;max-height:420px;}
-  .kiosk-reserve-btn{width:100%;padding:1.1rem;background:var(--gold);color:var(--dark);border:none;border-radius:14px;font-family:'Playfair Display',serif;font-size:1.2rem;cursor:pointer;margin-top:1rem;letter-spacing:.05em;transition:all .2s;}
+  .kiosk-floor{flex:1;display:flex;align-items:stretch;justify-content:center;overflow:hidden;min-height:0;}
+  .kiosk-floor svg{width:auto;height:100%;max-width:100%;display:block;}
+  .kiosk-reserve-btn{width:100%;padding:1.1rem;background:var(--gold);color:var(--dark);border:none;border-radius:14px;font-family:'Playfair Display',serif;font-size:1.15rem;cursor:pointer;margin-top:.75rem;letter-spacing:.05em;transition:all .2s;}
   .kiosk-reserve-btn:hover{background:var(--gold-light);}
-  .kiosk-exit-btn{background:none;border:none;color:rgba(0,0,0,.25);font-size:.7rem;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:.5rem;width:100%;text-align:center;}
+  .kiosk-exit-btn{background:none;border:none;color:rgba(0,0,0,.25);font-size:.7rem;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:.4rem;width:100%;text-align:center;}
 
-  /* Right panel - today's reservations */
-  .kiosk-right{flex:1;padding:1.5rem;overflow-y:auto;display:flex;flex-direction:column;gap:1rem;background:#0f2236;}
-  .kiosk-turno-section{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:1rem;}
-  .kiosk-turno-title{font-family:'Playfair Display',serif;color:#7EC8E3;font-size:1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem;}
-  .kiosk-mesa-row{display:flex;align-items:center;justify-content:space-between;padding:.55rem .85rem;border-radius:10px;margin-bottom:.4rem;}
-  .kiosk-mesa-row.libre{background:rgba(39,174,96,.18);border:1px solid rgba(39,174,96,.5);}
-  .kiosk-mesa-row.ocupada{background:rgba(192,57,43,.22);border:1px solid rgba(192,57,43,.5);}
-  .kiosk-mesa-name{font-family:'Playfair Display',serif;font-size:1rem;color:#ffffff;font-weight:600;}
-  .kiosk-mesa-info{font-size:.8rem;color:rgba(255,255,255,.85);}
-  .kiosk-mesa-status{font-size:.75rem;font-weight:700;padding:.25rem .7rem;border-radius:20px;}
-  .kiosk-mesa-status.libre{background:rgba(39,174,96,.3);color:#2ecc71;}
-  .kiosk-mesa-status.ocupada{background:rgba(192,57,43,.3);color:#ff6b6b;}
-  .kiosk-live{display:flex;align-items:center;gap:.4rem;font-size:.68rem;color:rgba(0,0,0,.35);margin-top:auto;padding-top:.5rem;}
+  /* Center panel - calendar only */
+  .kiosk-center{width:22%;background:#ffffff;display:flex;flex-direction:column;padding:1.5rem 1rem;border-right:1px solid rgba(0,0,0,.08);overflow-y:auto;}
+  .kiosk-center-title{font-family:'Playfair Display',serif;font-size:1rem;color:var(--dark);margin-bottom:1rem;text-align:center;padding-bottom:.75rem;border-bottom:1px solid rgba(0,0,0,.08);}
+
+  /* Right panel - all turnos, white background */
+  .kiosk-right{flex:1;padding:1.5rem;overflow-y:auto;display:flex;flex-direction:column;gap:.75rem;background:#ffffff;}
+  .kiosk-right-header{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--dark);font-weight:400;margin-bottom:.25rem;}
+  .kiosk-right-subheader{font-size:.8rem;color:var(--text-muted);margin-bottom:1rem;}
+  .kiosk-turno-section{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:.9rem 1rem;margin-bottom:.75rem;}
+  .kiosk-turno-title{font-family:'Playfair Display',serif;color:var(--dark);font-size:1rem;margin-bottom:.6rem;display:flex;align-items:center;gap:.5rem;}
+  .kiosk-mesa-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem .8rem;border-radius:10px;margin-bottom:.35rem;background:#fff;border:1px solid var(--border);}
+  .kiosk-mesa-row.libre{background:rgba(39,174,96,.07);border:1px solid rgba(39,174,96,.3);}
+  .kiosk-mesa-row.ocupada{background:rgba(192,57,43,.07);border:1px solid rgba(192,57,43,.3);}
+  .kiosk-mesa-name{font-family:'Playfair Display',serif;font-size:.95rem;color:var(--dark);font-weight:600;}
+  .kiosk-mesa-info{font-size:.75rem;color:var(--text-muted);}
+  .kiosk-mesa-status{font-size:.72rem;font-weight:700;padding:.22rem .7rem;border-radius:20px;}
+  .kiosk-mesa-status.libre{background:rgba(39,174,96,.15);color:#1E8449;}
+  .kiosk-mesa-status.ocupada{background:rgba(192,57,43,.15);color:#C0392B;}
+  .kiosk-live{display:flex;align-items:center;gap:.4rem;font-size:.68rem;color:var(--text-muted);margin-top:auto;padding-top:.5rem;}
   .kiosk-live-dot{width:6px;height:6px;border-radius:50%;background:#27AE60;animation:pulse 2s infinite;}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
 
-  /* Kiosk inline calendar */
-  .kiosk-inline-cal{background:#f8fafd;border:1px solid rgba(0,0,0,.1);border-radius:14px;padding:.85rem 1rem;margin-bottom:.85rem;}
+  /* Kiosk center calendar */
+  .kiosk-inline-cal{background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:14px;padding:.85rem 1rem;margin-bottom:1rem;}
   .kiosk-inline-cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;}
-  .kiosk-inline-cal-header button{background:none;border:none;color:var(--dark);font-size:1.2rem;cursor:pointer;padding:.1rem .35rem;border-radius:6px;line-height:1;transition:background .15s;}
-  .kiosk-inline-cal-header button:hover{background:rgba(0,0,0,.07);}
-  .kiosk-inline-month{font-family:'Playfair Display',serif;color:var(--dark);font-size:.92rem;}
+  .kiosk-inline-cal-header button{background:rgba(46,134,193,.08);border:none;color:var(--dark);font-size:1.3rem;cursor:pointer;padding:.15rem .45rem;border-radius:8px;line-height:1;transition:background .15s;}
+  .kiosk-inline-cal-header button:hover{background:rgba(46,134,193,.2);}
+  .kiosk-inline-month{font-family:'Playfair Display',serif;color:var(--dark);font-size:.95rem;}
   .kiosk-inline-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
-  .kiosk-inline-dow{text-align:center;font-size:.58rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);padding-bottom:.3rem;}
-  .kiosk-inline-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:7px;font-size:.78rem;cursor:pointer;color:var(--dark);transition:all .15s;border:1.5px solid transparent;}
+  .kiosk-inline-dow{text-align:center;font-size:.6rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);padding-bottom:.35rem;}
+  .kiosk-inline-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:7px;font-size:.82rem;cursor:pointer;color:var(--dark);transition:all .15s;border:1.5px solid transparent;}
   .kiosk-inline-day:hover{background:rgba(46,134,193,.15);}
   .kiosk-inline-day.today{border-color:rgba(46,134,193,.5);color:var(--brown);}
   .kiosk-inline-day.selected{background:var(--dark);color:#fff;font-weight:700;}
@@ -233,7 +239,14 @@
   .kiosk-inline-day.has-res{position:relative;}
   .kiosk-inline-day.has-res::after{content:'';width:4px;height:4px;border-radius:50%;background:var(--brown);position:absolute;bottom:2px;left:50%;transform:translateX(-50%);}
 
-  /* Kiosk calendar popup */
+  /* Turno selector (unused in center now, kept for compatibility) */
+  .kiosk-center-turno{display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem;}
+  .kiosk-center-turno-btn{padding:.85rem 1rem;border:1.5px solid var(--border);background:#fff;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--text-muted);cursor:pointer;text-align:center;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem;}
+  .kiosk-center-turno-btn.active{background:var(--dark);border-color:var(--dark);color:#fff;}
+  .kiosk-center-turno-btn:hover:not(.active){background:rgba(46,134,193,.08);border-color:var(--gold);}
+
+  .kiosk-selected-label{margin-top:.6rem;font-family:'Playfair Display',serif;font-size:.85rem;color:var(--dark);text-align:center;padding:.45rem .6rem;background:rgba(46,134,193,.07);border-radius:9px;border:1px solid rgba(46,134,193,.15);}
+  .kiosk-live{display:flex;align-items:center;gap:.4rem;font-size:.68rem;color:rgba(0,0,0,.35);margin-top:auto;padding-top:.5rem;}
   .kiosk-cal-overlay{position:fixed;inset:0;z-index:450;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);}
   .kiosk-cal-overlay.show{display:flex;}
   .kiosk-cal-box{background:var(--dark);border:1px solid rgba(46,134,193,.3);border-radius:20px;padding:1.5rem;width:340px;animation:fadeUp .2s ease;}
@@ -668,23 +681,13 @@
 
 <!-- KIOSK SCREEN -->
 <div id="kiosk-screen">
-  <!-- Left: floor plan -->
+  <!-- Left: floor plan + reserve button -->
   <div class="kiosk-left">
     <div class="kiosk-header">
       <div class="kiosk-logo">
         <div id="kiosk-logo-wrap"></div>
         <div class="kiosk-title">Sociedad Gastronómica<br><span style="font-size:.85em;opacity:.7">Club Ciclista Irunes</span></div>
       </div>
-    </div>
-    <!-- Inline calendar -->
-    <div class="kiosk-inline-cal">
-      <div class="kiosk-inline-cal-header">
-        <button onclick="kioskInlineCalNav(-1)">‹</button>
-        <span class="kiosk-inline-month" id="kiosk-inline-month"></span>
-        <button onclick="kioskInlineCalNav(1)">›</button>
-      </div>
-      <div class="kiosk-inline-grid" id="kiosk-inline-grid"></div>
-      <div id="kiosk-selected-date" style="margin-top:.6rem;font-family:'Playfair Display',serif;font-size:.85rem;color:var(--dark);text-align:center;padding:.4rem;background:rgba(46,134,193,.08);border-radius:8px;"></div>
     </div>
     <div class="kiosk-floor">
       <svg id="kiosk-svg" viewBox="0 0 340 650" xmlns="http://www.w3.org/2000/svg">
@@ -718,7 +721,24 @@
     </div>
     <button class="kiosk-reserve-btn" onclick="openKioskLogin()">📋 Hacer una reserva</button>
     <button class="kiosk-exit-btn" onclick="exitKiosk()">Salir del modo quiosco</button>
-    <div class="kiosk-live"><div class="kiosk-live-dot"></div>En directo · actualización automática</div>
+  </div>
+
+  <!-- Center: calendar only -->
+  <div class="kiosk-center">
+    <div class="kiosk-center-title">📅 Seleccionar fecha</div>
+    <!-- Inline calendar -->
+    <div class="kiosk-inline-cal">
+      <div class="kiosk-inline-cal-header">
+        <button onclick="kioskInlineCalNav(-1)">‹</button>
+        <span class="kiosk-inline-month" id="kiosk-inline-month"></span>
+        <button onclick="kioskInlineCalNav(1)">›</button>
+      </div>
+      <div class="kiosk-inline-grid" id="kiosk-inline-grid"></div>
+      <div id="kiosk-selected-date" class="kiosk-selected-label"></div>
+    </div>
+    <div style="margin-top:auto;padding-top:1rem;">
+      <div class="kiosk-live"><div class="kiosk-live-dot"></div>En directo · actualización automática</div>
+    </div>
   </div>
 
   <!-- Right: today's reservations -->
@@ -1350,11 +1370,19 @@ function switchTab(tab){
 }
 
 // ── KIOSK MODE ─────────────────────────────────────────────
-let kioskChannel=null, kioskDate=new Date(), _reservaGroups={};
+let kioskChannel=null, kioskDate=new Date(), kioskTurno='comida', _reservaGroups={};
 
 function enterKiosk(){
   enModoQuiosco=true;
   kioskDate=new Date();kioskDate.setHours(0,0,0,0);
+  // Set default turno based on current hour
+  const h=new Date().getHours();
+  kioskTurno=h<15?'comida':h<19?'merienda':'cena';
+  // Highlight correct turno button
+  document.querySelectorAll('.kiosk-center-turno-btn').forEach(function(btn){
+    const t=btn.getAttribute('onclick').match(/'(\w+)'/)?.[1];
+    btn.classList.toggle('active', t===kioskTurno);
+  });
   // Copy logo into kiosk
   const logoImg=document.querySelector('.emblem-logo img');
   if(logoImg) document.getElementById('kiosk-logo-wrap').innerHTML=logoImg.outerHTML;
@@ -1406,9 +1434,8 @@ function renderKioskDate(){
 
 function renderKioskFloor(){
   const f=fmt(kioskDate);
-  // Show current turno based on time
-  const h=new Date().getHours();
-  const turno=h<15?'comida':h<19?'merienda':'cena';
+  // Use selected turno from center panel
+  const turno=kioskTurno;
   [1,2,3,4,5].forEach(function(id){
     const res=getRes(id,turno,f);
     const libre=!res;
@@ -1423,30 +1450,39 @@ function renderKioskFloor(){
 
 function renderKioskRight(){
   const f=fmt(kioskDate);
+  const kd=new Date(kioskDate);kd.setHours(0,0,0,0);
+  const today=new Date();today.setHours(0,0,0,0);
+  const isToday=kd.getTime()===today.getTime();
+  const dateLabel=(isToday?'Hoy · ':'')+DIAS[kd.getDay()]+', '+kd.getDate()+' de '+MESES[kd.getMonth()]+' '+kd.getFullYear();
+
   const turnos=[
     {key:'comida',label:'Comida',icon:'🍽️'},
     {key:'merienda',label:'Merienda',icon:'☕'},
     {key:'cena',label:'Cena',icon:'🌙'}
   ];
-  const html=turnos.map(t=>{
+
+  const sections=turnos.map(function(t){
     const rows=[1,2,3,4,5].map(function(id){
       const res=getRes(id,t.key,f);
       const libre=!res;
       const nombre=id===5?'Mesa Ext.':'Mesa '+id;
       return '<div class="kiosk-mesa-row '+(libre?'libre':'ocupada')+'">'+
-        '<div>'+
-          '<div class="kiosk-mesa-name">'+nombre+'</div>'+
-          (libre?'':'<div class="kiosk-mesa-info">'+sN(res.socio_num)+' · '+res.comensales+' pers.</div>')+
-        '</div>'+
-        '<span class="kiosk-mesa-status '+(libre?'libre':'ocupada')+'">'+(libre?'Libre':'Reservada')+'</span>'+
+        '<div class="kiosk-mesa-name">'+nombre+'</div>'+
+        (libre
+          ?'<span class="kiosk-mesa-status libre">Libre</span>'
+          :'<div style="text-align:right"><span class="kiosk-mesa-status ocupada">Reservada</span><div class="kiosk-mesa-info" style="margin-top:.15rem;">'+res.comensales+' pers.</div></div>')+
       '</div>';
     }).join('');
     return '<div class="kiosk-turno-section">'+
-      '<div class="kiosk-turno-title"><span>'+t.icon+'</span><span>'+t.label+'</span></div>'+
+      '<div class="kiosk-turno-title">'+t.icon+' '+t.label+'</div>'+
       rows+
     '</div>';
   }).join('');
-  document.getElementById('kiosk-right').innerHTML=html;
+
+  document.getElementById('kiosk-right').innerHTML=
+    '<div class="kiosk-right-header">Estado de mesas</div>'+
+    '<div class="kiosk-right-subheader">'+dateLabel+'</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;flex:1;">'+sections+'</div>';
 }
 
 function openKioskLogin(){
@@ -1531,6 +1567,13 @@ function doKioskLogin(){
 
 // ── KIOSK INLINE CALENDAR ────────────────────────────────────
 let kioskInlineCalView = new Date();
+
+function kioskSelTurno(turno, btn){
+  kioskTurno=turno;
+  document.querySelectorAll('.kiosk-center-turno-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderKioskRight();
+}
 
 function renderKioskInlineCal(){
   const today=new Date();today.setHours(0,0,0,0);
