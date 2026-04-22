@@ -181,72 +181,61 @@
   .btn-confirm:hover{background:var(--gold-light);}
   .btn-back{padding:.88rem 1.2rem;background:none;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.92rem;cursor:pointer;color:var(--text-muted);}
   /* ── KIOSK MODE ── */
-  #kiosk-screen{display:none;position:fixed;inset:0;background:var(--dark);z-index:300;flex-direction:row;align-items:stretch;}
+  #kiosk-screen{display:none;position:fixed;inset:0;z-index:300;flex-direction:row;align-items:stretch;background:#f0f4f8;}
   #kiosk-screen.show{display:flex;}
 
-  /* Left panel - floor plan + button */
-  .kiosk-left{width:35%;background:#ffffff;display:flex;flex-direction:column;padding:1.25rem 1.25rem 1rem;border-right:1px solid rgba(0,0,0,.08);height:100vh;}
-  .kiosk-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-shrink:0;}
-  .kiosk-logo{display:flex;align-items:center;gap:.75rem;}
-  .kiosk-logo img{width:52px;height:52px;object-fit:contain;border-radius:10px;background:#fff;padding:4px;}
-  .kiosk-title{font-family:'Playfair Display',serif;color:var(--dark);font-size:1.05rem;line-height:1.3;}
-  .kiosk-date{text-align:right;}
-  .kiosk-date .kd-day{font-family:'Playfair Display',serif;color:var(--dark);font-size:1.3rem;}
-  .kiosk-date .kd-date{font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;}
-  .kiosk-floor{flex:1;min-height:0;display:flex;align-items:stretch;justify-content:center;overflow:hidden;}
-  .kiosk-floor svg{width:auto;height:100%;max-width:100%;display:block;}
-  .kiosk-reserve-btn{width:100%;padding:1.1rem;background:var(--gold);color:var(--dark);border:none;border-radius:14px;font-family:'Playfair Display',serif;font-size:1.15rem;cursor:pointer;margin-top:.75rem;letter-spacing:.05em;transition:all .2s;flex-shrink:0;}
-  .kiosk-reserve-btn:hover{background:var(--gold-light);}
-  .kiosk-exit-btn{background:none;border:none;color:rgba(0,0,0,.25);font-size:.7rem;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:.4rem;width:100%;text-align:center;flex-shrink:0;}
+  /* Two equal columns */
+  .kiosk-center{width:50%;background:#ffffff;display:flex;flex-direction:column;padding:2.5rem 3rem;border-right:1px solid #e0e4ea;overflow-y:auto;}
+  .kiosk-right{width:50%;background:#f8fafd;display:flex;flex-direction:column;padding:2.5rem 3rem;overflow-y:auto;gap:.75rem;}
 
-  /* Center panel - calendar only */
-  .kiosk-center{width:22%;background:#ffffff;display:flex;flex-direction:column;padding:1.5rem 1rem;border-right:1px solid rgba(0,0,0,.08);overflow-y:auto;}
-  .kiosk-center-title{font-family:'Playfair Display',serif;font-size:1rem;color:var(--dark);margin-bottom:1rem;text-align:center;padding-bottom:.75rem;border-bottom:1px solid rgba(0,0,0,.08);}
+  /* Header */
+  .kiosk-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;flex-shrink:0;}
+  .kiosk-logo{display:flex;align-items:center;gap:1rem;}
+  .kiosk-logo img{width:60px;height:60px;object-fit:contain;border-radius:12px;}
+  .kiosk-title{font-family:'Playfair Display',serif;color:var(--dark);font-size:1.2rem;line-height:1.35;}
 
-  /* Right panel - all turnos, white background */
-  .kiosk-right{flex:1;padding:1.5rem;overflow-y:auto;display:flex;flex-direction:column;gap:.75rem;background:#ffffff;}
-  .kiosk-right-header{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--dark);font-weight:400;margin-bottom:.25rem;}
-  .kiosk-right-subheader{font-size:.8rem;color:var(--text-muted);margin-bottom:1rem;}
-  .kiosk-turno-section{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:.9rem 1rem;margin-bottom:.75rem;}
-  .kiosk-turno-title{font-family:'Playfair Display',serif;color:var(--dark);font-size:1rem;margin-bottom:.6rem;display:flex;align-items:center;gap:.5rem;}
-  .kiosk-mesa-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem .8rem;border-radius:10px;margin-bottom:.35rem;background:#fff;border:1px solid var(--border);}
-  .kiosk-mesa-row.libre{background:rgba(39,174,96,.07);border:1px solid rgba(39,174,96,.3);}
-  .kiosk-mesa-row.ocupada{background:rgba(192,57,43,.07);border:1px solid rgba(192,57,43,.3);}
-  .kiosk-mesa-name{font-family:'Playfair Display',serif;font-size:.95rem;color:var(--dark);font-weight:600;}
-  .kiosk-mesa-info{font-size:.75rem;color:var(--text-muted);}
-  .kiosk-mesa-status{font-size:.72rem;font-weight:700;padding:.22rem .7rem;border-radius:20px;}
-  .kiosk-mesa-status.libre{background:rgba(39,174,96,.15);color:#1E8449;}
-  .kiosk-mesa-status.ocupada{background:rgba(192,57,43,.15);color:#C0392B;}
-  .kiosk-live{display:flex;align-items:center;gap:.4rem;font-size:.68rem;color:var(--text-muted);margin-top:auto;padding-top:.5rem;}
-  .kiosk-live-dot{width:6px;height:6px;border-radius:50%;background:#27AE60;animation:pulse 2s infinite;}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-
-
-  /* Kiosk center calendar */
-  .kiosk-inline-cal{background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:14px;padding:.85rem 1rem;margin-bottom:1rem;}
-  .kiosk-inline-cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;}
-  .kiosk-inline-cal-header button{background:rgba(46,134,193,.08);border:none;color:var(--dark);font-size:1.3rem;cursor:pointer;padding:.15rem .45rem;border-radius:8px;line-height:1;transition:background .15s;}
-  .kiosk-inline-cal-header button:hover{background:rgba(46,134,193,.2);}
-  .kiosk-inline-month{font-family:'Playfair Display',serif;color:var(--dark);font-size:.95rem;}
-  .kiosk-inline-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
-  .kiosk-inline-dow{text-align:center;font-size:.6rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);padding-bottom:.35rem;}
-  .kiosk-inline-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:7px;font-size:.82rem;cursor:pointer;color:var(--dark);transition:all .15s;border:1.5px solid transparent;}
-  .kiosk-inline-day:hover{background:rgba(46,134,193,.15);}
+  /* Calendar */
+  .kiosk-inline-cal{background:#f8fafd;border:1px solid #e4e8f0;border-radius:20px;padding:1.75rem 2rem;margin-bottom:2rem;flex-shrink:0;}
+  .kiosk-inline-cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
+  .kiosk-inline-cal-header button{background:#eef1f7;border:none;color:var(--dark);font-size:1.6rem;cursor:pointer;padding:.15rem .6rem;border-radius:10px;line-height:1;transition:background .15s;}
+  .kiosk-inline-cal-header button:hover{background:#dde3ee;}
+  .kiosk-inline-month{font-family:'Playfair Display',serif;color:var(--dark);font-size:1.4rem;}
+  .kiosk-inline-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+  .kiosk-inline-dow{text-align:center;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);padding-bottom:.65rem;font-weight:600;}
+  .kiosk-inline-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:12px;font-size:1.1rem;cursor:pointer;color:var(--dark);transition:all .15s;border:2px solid transparent;}
+  .kiosk-inline-day:hover{background:rgba(46,134,193,.12);}
   .kiosk-inline-day.today{border-color:rgba(46,134,193,.5);color:var(--brown);}
   .kiosk-inline-day.selected{background:var(--dark);color:#fff;font-weight:700;}
-  .kiosk-inline-day.disabled{color:rgba(0,0,0,.2);cursor:not-allowed;pointer-events:none;}
+  .kiosk-inline-day.disabled{color:rgba(0,0,0,.18);cursor:not-allowed;pointer-events:none;}
   .kiosk-inline-day.empty{pointer-events:none;}
   .kiosk-inline-day.has-res{position:relative;}
-  .kiosk-inline-day.has-res::after{content:'';width:4px;height:4px;border-radius:50%;background:var(--brown);position:absolute;bottom:2px;left:50%;transform:translateX(-50%);}
+  .kiosk-inline-day.has-res::after{content:'';width:5px;height:5px;border-radius:50%;background:var(--brown);position:absolute;bottom:3px;left:50%;transform:translateX(-50%);}
+  .kiosk-selected-label{margin-top:1.1rem;font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--dark);text-align:center;padding:.7rem 1rem;background:rgba(46,134,193,.07);border-radius:12px;border:1px solid rgba(46,134,193,.18);}
 
-  /* Turno selector (unused in center now, kept for compatibility) */
-  .kiosk-center-turno{display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem;}
-  .kiosk-center-turno-btn{padding:.85rem 1rem;border:1.5px solid var(--border);background:#fff;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--text-muted);cursor:pointer;text-align:center;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem;}
-  .kiosk-center-turno-btn.active{background:var(--dark);border-color:var(--dark);color:#fff;}
-  .kiosk-center-turno-btn:hover:not(.active){background:rgba(46,134,193,.08);border-color:var(--gold);}
+  /* Reserve button */
+  .kiosk-reserve-btn{width:100%;padding:1.4rem;background:var(--gold);color:var(--dark);border:none;border-radius:18px;font-family:'Playfair Display',serif;font-size:1.35rem;cursor:pointer;letter-spacing:.04em;transition:all .2s;flex-shrink:0;margin-top:auto;}
+  .kiosk-reserve-btn:hover{background:var(--gold-light);}
+  .kiosk-exit-btn{background:none;border:none;color:rgba(0,0,0,.22);font-size:.75rem;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:.6rem;width:100%;text-align:center;flex-shrink:0;padding:.4rem;}
 
-  .kiosk-selected-label{margin-top:.6rem;font-family:'Playfair Display',serif;font-size:.85rem;color:var(--dark);text-align:center;padding:.45rem .6rem;background:rgba(46,134,193,.07);border-radius:9px;border:1px solid rgba(46,134,193,.15);}
-  .kiosk-live{display:flex;align-items:center;gap:.4rem;font-size:.68rem;color:rgba(0,0,0,.35);margin-top:auto;padding-top:.5rem;}
+  /* Live indicator */
+  .kiosk-live{display:flex;align-items:center;gap:.5rem;font-size:.75rem;color:var(--text-muted);}
+  .kiosk-live-dot{width:7px;height:7px;border-radius:50%;background:#27AE60;animation:pulse 2s infinite;flex-shrink:0;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+  /* Right panel */
+  .kiosk-right-header{font-family:'Playfair Display',serif;font-size:1.75rem;color:var(--dark);font-weight:400;flex-shrink:0;}
+  .kiosk-right-subheader{font-size:.88rem;color:var(--text-muted);margin-bottom:1.25rem;flex-shrink:0;}
+  .kiosk-turno-section{background:#fff;border:1px solid #e4e8f0;border-radius:18px;padding:1.25rem 1.5rem;flex-shrink:0;}
+  .kiosk-turno-title{font-family:'Playfair Display',serif;color:var(--dark);font-size:1.1rem;margin-bottom:.8rem;display:flex;align-items:center;gap:.5rem;}
+  .kiosk-mesa-row{display:flex;align-items:center;justify-content:space-between;padding:.6rem .9rem;border-radius:10px;margin-bottom:.35rem;}
+  .kiosk-mesa-row.libre{background:rgba(39,174,96,.07);border:1px solid rgba(39,174,96,.25);}
+  .kiosk-mesa-row.ocupada{background:rgba(192,57,43,.07);border:1px solid rgba(192,57,43,.25);}
+  .kiosk-mesa-name{font-family:'Playfair Display',serif;font-size:1rem;color:var(--dark);font-weight:600;}
+  .kiosk-mesa-info{font-size:.78rem;color:var(--text-muted);}
+  .kiosk-mesa-status{font-size:.75rem;font-weight:700;padding:.25rem .85rem;border-radius:20px;}
+  .kiosk-mesa-status.libre{background:rgba(39,174,96,.15);color:#1a7a3c;}
+  .kiosk-mesa-status.ocupada{background:rgba(192,57,43,.15);color:#a02020;}
+
   .kiosk-cal-overlay{position:fixed;inset:0;z-index:450;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);}
   .kiosk-cal-overlay.show{display:flex;}
   .kiosk-cal-box{background:var(--dark);border:1px solid rgba(46,134,193,.3);border-radius:20px;padding:1.5rem;width:340px;animation:fadeUp .2s ease;}
@@ -681,52 +670,18 @@
 
 <!-- KIOSK SCREEN -->
 <div id="kiosk-screen">
-  <!-- Left: floor plan + reserve button -->
-  <div class="kiosk-left">
+
+  <!-- Col 1: calendario + botón reserva -->
+  <div class="kiosk-center">
+    <!-- Header con logo y título -->
     <div class="kiosk-header">
       <div class="kiosk-logo">
         <div id="kiosk-logo-wrap"></div>
-        <div class="kiosk-title">Sociedad Gastronómica<br><span style="font-size:.85em;opacity:.7">Club Ciclista Irunes</span></div>
+        <div class="kiosk-title">Sociedad Gastronómica<br><span style="font-size:.85em;opacity:.6">Club Ciclista Irunes</span></div>
       </div>
+      <div class="kiosk-live"><div class="kiosk-live-dot"></div>En directo</div>
     </div>
-    <div class="kiosk-floor">
-      <svg id="kiosk-svg" viewBox="0 0 340 650" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <pattern id="tile2" width="22" height="22" patternUnits="userSpaceOnUse"><rect width="22" height="22" fill="#EAE5DA"/><rect width="22" height="22" fill="none" stroke="#DDD8CC" stroke-width=".6"/></pattern>
-          <pattern id="tile-ext2" width="22" height="22" patternUnits="userSpaceOnUse"><rect width="22" height="22" fill="#E4EDE8"/><rect width="22" height="22" fill="none" stroke="#A9CFBB" stroke-width=".6"/></pattern>
-        </defs>
-        <!-- TERRAZA EXTERIOR -->
-        <g id="km-terraza">
-          <rect x="8" y="8" width="324" height="110" rx="6" fill="url(#tile-ext2)" stroke="#5A9070" stroke-width="2" stroke-dasharray="8,4"/>
-          <text x="170" y="25" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10" font-weight="600" fill="#3A6050" letter-spacing="2">☀️ TERRAZA EXTERIOR</text>
-          <g id="km5"><rect id="km5-bg" x="62" y="30" width="216" height="72" rx="5" fill="#D4A83C" stroke="#27AE60" stroke-width="3"/><text x="170" y="63" text-anchor="middle" font-family="Playfair Display,serif" font-size="17" fill="#fff">Mesa Exterior</text><text id="km5-sub" x="170" y="82" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" fill="rgba(255,255,255,.85)"></text></g>
-          <rect x="260" y="116" width="68" height="8" rx="3" fill="#5A9070" opacity=".6"/>
-          <text x="294" y="113" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="#3A6050" font-weight="600">🚪 acceso terraza</text>
-        </g>
-        <!-- EDIFICIO -->
-        <rect x="8" y="122" width="324" height="514" fill="url(#tile2)" stroke="#8A8070" stroke-width="3.5"/>
-        <rect x="8" y="122" width="324" height="46" fill="#B8A888"/>
-        <rect x="16" y="128" width="308" height="32" rx="4" fill="#CEC0A0" stroke="#A89870" stroke-width="1"/>
-        <text x="170" y="149" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="13" font-weight="600" fill="#6B5840" letter-spacing="3">COCINA</text>
-        <rect x="8" y="168" width="64" height="468" fill="#E0DBD0" opacity=".55"/>
-        <line x1="72" y1="168" x2="72" y2="636" stroke="#AAA090" stroke-width="1.5" stroke-dasharray="7,5"/>
-        <text x="40" y="414" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" fill="#9A9280" letter-spacing="1.5" transform="rotate(-90,40,414)">PASILLO</text>
-        <rect x="326" y="168" width="6" height="468" fill="#8A8070"/>
-        <g id="km1"><rect id="km1-bg" x="110" y="178" width="216" height="82" rx="5" fill="#D4A83C" stroke="#27AE60" stroke-width="3"/><text x="218" y="217" text-anchor="middle" font-family="Playfair Display,serif" font-size="19" fill="#fff">Mesa 1</text><text id="km1-sub" x="218" y="236" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" fill="rgba(255,255,255,.85)"></text></g>
-        <g id="km2"><rect id="km2-bg" x="110" y="282" width="216" height="82" rx="5" fill="#D4A83C" stroke="#27AE60" stroke-width="3"/><text x="218" y="321" text-anchor="middle" font-family="Playfair Display,serif" font-size="19" fill="#fff">Mesa 2</text><text id="km2-sub" x="218" y="340" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" fill="rgba(255,255,255,.85)"></text></g>
-        <g id="km3"><rect id="km3-bg" x="110" y="386" width="216" height="82" rx="5" fill="#D4A83C" stroke="#27AE60" stroke-width="3"/><text x="218" y="425" text-anchor="middle" font-family="Playfair Display,serif" font-size="19" fill="#fff">Mesa 3</text><text id="km3-sub" x="218" y="444" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" fill="rgba(255,255,255,.85)"></text></g>
-        <g id="km4"><rect id="km4-bg" x="110" y="490" width="216" height="82" rx="5" fill="#D4A83C" stroke="#27AE60" stroke-width="3"/><text x="218" y="529" text-anchor="middle" font-family="Playfair Display,serif" font-size="19" fill="#fff">Mesa 4</text><text id="km4-sub" x="218" y="548" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" fill="rgba(255,255,255,.85)"></text></g>
-        <text x="40" y="628" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" font-weight="600" fill="#7A7060" letter-spacing="1">PUERTA</text>
-      </svg>
-    </div>
-    <button class="kiosk-reserve-btn" onclick="openKioskLogin()">📋 Hacer una reserva</button>
-    <button class="kiosk-exit-btn" onclick="exitKiosk()">Salir del modo quiosco</button>
-  </div>
-
-  <!-- Center: calendar only -->
-  <div class="kiosk-center">
-    <div class="kiosk-center-title">📅 Seleccionar fecha</div>
-    <!-- Inline calendar -->
+    <!-- Calendario -->
     <div class="kiosk-inline-cal">
       <div class="kiosk-inline-cal-header">
         <button onclick="kioskInlineCalNav(-1)">‹</button>
@@ -736,13 +691,14 @@
       <div class="kiosk-inline-grid" id="kiosk-inline-grid"></div>
       <div id="kiosk-selected-date" class="kiosk-selected-label"></div>
     </div>
-    <div style="margin-top:auto;padding-top:1rem;">
-      <div class="kiosk-live"><div class="kiosk-live-dot"></div>En directo · actualización automática</div>
-    </div>
+    <!-- Botón reserva -->
+    <button class="kiosk-reserve-btn" onclick="openKioskLogin()">📋 Hacer una reserva</button>
+    <button class="kiosk-exit-btn" onclick="exitKiosk()">Salir del modo quiosco</button>
   </div>
 
-  <!-- Right: today's reservations -->
+  <!-- Col 2: estado de mesas -->
   <div class="kiosk-right" id="kiosk-right"></div>
+
 </div>
 
 <!-- Kiosk login modal -->
@@ -1482,7 +1438,7 @@ function renderKioskRight(){
   document.getElementById('kiosk-right').innerHTML=
     '<div class="kiosk-right-header">Estado de mesas</div>'+
     '<div class="kiosk-right-subheader">'+dateLabel+'</div>'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;flex:1;">'+sections+'</div>';
+    sections;
 }
 
 function openKioskLogin(){
