@@ -367,6 +367,14 @@
   .limp-empty .limp-icon{font-size:2.5rem;margin-bottom:.75rem;}
   .limp-live{display:flex;align-items:center;justify-content:center;gap:.4rem;font-size:.68rem;color:var(--text-muted);padding:1rem;}
   .limp-live-dot{width:6px;height:6px;border-radius:50%;background:#27AE60;animation:pulse 2s infinite;}
+  /* Notas */
+  .nota-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:.9rem 1.1rem;margin-bottom:.65rem;}
+  .nota-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:.2rem;}
+  .nota-fecha{font-size:.75rem;color:var(--text-muted);}
+  .nota-total-n{font-family:'Playfair Display',serif;font-size:1rem;color:var(--dark);}
+  .nota-pago{font-size:.68rem;padding:.18rem .5rem;border-radius:20px;font-weight:500;}
+  .nota-pago.efectivo{background:rgba(39,174,96,.15);color:#1a7a3c;}
+  .nota-pago.tarjeta{background:rgba(46,134,193,.15);color:var(--brown);}
 </style>
 </head>
 <body>
@@ -415,6 +423,7 @@
   <div class="tabs" id="main-tabs">
     <div class="tab active" onclick="switchTab('plano')">Plano</div>
     <div class="tab" onclick="switchTab('mias')">Mis reservas</div>
+    <div class="tab" onclick="switchTab('notas')">🧾 Mis notas</div>
     <div class="tab admin-only" style="display:none" onclick="switchTab('admin')">⚙️ Admin</div>
     <div class="tab admin-only" style="display:none" onclick="switchTab('socios')">👥 Socios</div>
   </div>
@@ -551,6 +560,12 @@
       </div>
       <div id="mis-reservas-pasadas-list" style="display:none"></div>
     </div>
+  </div>
+
+  <!-- MIS NOTAS -->
+  <div id="tab-notas" class="content" style="display:none">
+    <div class="section-title">Mis últimas notas de gasto</div>
+    <div id="notas-list"></div>
   </div>
 
   <!-- ADMIN -->
@@ -778,6 +793,7 @@ async function doLogin(){
   btn.disabled=true;
   showLoading('Cargando reservas…');
   await loadReservas();
+  await loadNotas();
   hideLoading();
   cu=u;
   loadSocioTel();
@@ -1294,7 +1310,7 @@ async function deleteSocio(num){
 // ── TABS ─────────────────────────────────────────────
 function switchTab(tab){
   const isDesktop = window.innerWidth >= 900;
-  ['plano','mias','admin','socios'].forEach(t=>{
+  ['plano','mias','notas','admin','socios'].forEach(t=>{
     const el = document.getElementById('tab-'+t);
     if(t===tab){
       el.style.display = (t==='plano' && isDesktop) ? 'flex' : 'block';
@@ -1302,8 +1318,9 @@ function switchTab(tab){
       el.style.display = 'none';
     }
   });
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['plano','mias','admin','socios'][i]===tab));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['plano','mias','notas','admin','socios'][i]===tab));
   if(tab==='mias')renderMisReservas();
+  if(tab==='notas')renderMisNotas();
   if(tab==='admin')renderAdminPanel();
   if(tab==='socios')renderSociosList();
 }
@@ -1624,6 +1641,61 @@ async function saveSocioTel(tel){
   await sb.from('socios').upsert({socio_num:cu,tel:t},{onConflict:'socio_num'});
   socioTel=t;
 }
+// ── NOTAS DE GASTO ─────────────────────────────────────
+let notasData=[];
+function fmt2(n){return n.toFixed(2).replace('.',',');}
+async function loadNotas(){
+  const {data}=await sb.from('notas_gasto').select('*').order('created_at',{ascending:false}).limit(1000);
+  if(data) notasData=data;
+}
+function renderMisNotas(){
+  const mias=notasData.filter(n=>n.socio_num===cu);
+  const list=document.getElementById('notas-list');
+  if(!mias.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">🧾</div><p>No tienes notas registradas.</p></div>';return;}
+  let html='';
+  mias.forEach(function(n,idx){
+    const d=new Date(n.created_at);
+    const fechaStr=d.toLocaleDateString('es-ES')+' '+d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    const lineas=JSON.parse(n.lineas||'[]');
+    let detalleHtml='';
+    lineas.forEach(function(l){
+      detalleHtml+='<div style="display:flex;justify-content:space-between;font-size:.78rem;padding:.2rem 0;border-bottom:1px solid var(--border);">'+
+        '<span>'+l.qty+'x '+l.nombre+'</span>'+
+        '<span style="color:var(--text-muted)">'+fmt2(l.subtotal)+'€</span>'+
+      '</div>';
+    });
+    const turnoLabel=n.turno==='comida'?'🍽️ Comida':n.turno==='merienda'?'☕ Merienda':n.turno==='cena'?'🌙 Cena':'';
+    const nid='n'+idx;
+    html+='<div class="nota-item">'+
+      '<div class="nota-header" data-nid="'+nid+'" onclick="toggleNota(this.dataset.nid)">'+
+        '<span class="nota-fecha">'+fechaStr+'</span>'+
+        '<div style="display:flex;align-items:center;gap:.5rem;">'+
+          '<span class="nota-total-n">'+fmt2(n.total)+'€</span>'+
+          '<span id="arrow-'+nid+'" style="color:var(--text-muted);font-size:.9rem;transition:transform .2s">▾</span>'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;align-items:center;gap:.5rem;margin:.35rem 0;flex-wrap:wrap">'+
+        '<span class="nota-pago '+n.forma_pago+'">'+(n.forma_pago==='efectivo'?'💵 Efectivo':'💳 Tarjeta')+'</span>'+
+        (turnoLabel?'<span style="font-size:.68rem;padding:.18rem .5rem;border-radius:20px;background:rgba(46,134,193,.15);color:var(--brown);">'+turnoLabel+(n.comensales?' · '+n.comensales+' pers.':'')+'</span>':'')+
+        (n.propina>0?'<span style="font-size:.7rem;color:var(--text-muted)">+'+fmt2(n.propina)+'€ propina</span>':'')+
+      '</div>'+
+      '<div id="detalle-'+nid+'" style="display:none;margin-top:.4rem;">'+
+        detalleHtml+
+        (n.propina>0?'<div style="display:flex;justify-content:space-between;font-size:.78rem;padding:.3rem 0;color:var(--text-muted);"><span>Propina</span><span>'+fmt2(n.propina)+'€</span></div>':'')+
+        '<div style="display:flex;justify-content:space-between;font-size:.88rem;font-weight:600;padding:.4rem 0;border-top:2px solid var(--dark);margin-top:.2rem;"><span>TOTAL</span><span>'+fmt2(n.total)+'€</span></div>'+
+      '</div>'+
+    '</div>';
+  });
+  list.innerHTML=html;
+}
+function toggleNota(id){
+  const det=document.getElementById('detalle-'+id);
+  const arr=document.getElementById('arrow-'+id);
+  const open=det.style.display==='none';
+  det.style.display=open?'block':'none';
+  arr.style.transform=open?'rotate(180deg)':'rotate(0deg)';
+}
+
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;t.classList.add('show');
