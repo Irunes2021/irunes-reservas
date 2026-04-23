@@ -185,8 +185,8 @@
   #kiosk-screen.show{display:flex;}
 
   /* Two equal columns */
-  .kiosk-center{width:50%;background:#ffffff;display:flex;flex-direction:column;padding:2.5rem 3rem;border-right:1px solid #e0e4ea;overflow-y:auto;}
-  .kiosk-right{width:50%;background:#f8fafd;display:flex;flex-direction:column;padding:1.25rem 2rem;overflow:hidden;gap:.4rem;}
+  .kiosk-center{width:50%;background:#ffffff;display:flex;flex-direction:column;padding:1.5rem 2rem;border-left:1px solid #e0e4ea;overflow-y:auto;align-items:center;justify-content:center;}
+  .kiosk-right{width:50%;background:#f8fafd;display:flex;flex-direction:column;padding:2.5rem 3rem;overflow-y:auto;gap:.4rem;border-right:1px solid #e0e4ea;}
 
   /* Header */
   .kiosk-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-shrink:0;}
@@ -651,6 +651,8 @@
 <!-- KIOSK SCREEN -->
 <div id="kiosk-screen">
 
+  <!-- Col 2: estado de mesas -->
+  <div class="kiosk-right" id="kiosk-right"></div>
   <!-- Col 1: calendario + botón reserva -->
   <div class="kiosk-center">
     <!-- Header con logo y título -->
@@ -676,8 +678,7 @@
     <a class="kiosk-inicio-btn" href="https://inicio.ccirunes.com">← Volver al inicio</a>
   </div>
 
-  <!-- Col 2: estado de mesas -->
-  <div class="kiosk-right" id="kiosk-right"></div>
+
 
 </div>
 
@@ -1418,6 +1419,7 @@ function renderKioskRight(){
   }).join('');
 
   document.getElementById('kiosk-right').innerHTML=
+    '<div style="background:#0D2147;color:#A8C8F0;text-align:center;padding:.65rem 1rem;border-radius:10px;font-size:.9rem;margin-bottom:.9rem;">👆 Pulsa sobre la mesa que quieras reservar</div>'+
     '<div class="kiosk-right-header">Estado de mesas</div>'+
     '<div class="kiosk-right-subheader">'+dateLabel+'</div>'+
     sections;
