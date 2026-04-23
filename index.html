@@ -391,8 +391,8 @@
         <input type="text" id="login-user" placeholder="Ej: 042" autocomplete="off" inputmode="numeric">
       </div>
       <div class="field-group">
-        <label>DNI</label>
-        <input type="password" id="login-pass" placeholder="Ej: 12345678A">
+        <label>DNI (sin letra)</label>
+        <input type="tel" id="login-pass" placeholder="Ej: 12345678" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
         <div class="error-msg" id="login-error">Número de socio o DNI incorrecto</div>
       </div>
       <button class="btn-primary" id="login-btn" onclick="doLogin()">Entrar</button>
@@ -687,7 +687,7 @@
     <h3>Identificación</h3>
     <p>Introduce tu número de socio y DNI para hacer una reserva</p>
     <div class="kiosk-field"><label>Número de socio</label><input type="text" id="kiosk-user" placeholder="Ej: 042" inputmode="numeric" autocomplete="off"></div>
-    <div class="kiosk-field"><label>DNI</label><input type="password" id="kiosk-pass" placeholder="Ej: 12345678A"></div>
+    <div class="kiosk-field"><label>DNI (sin letra)</label><input type="tel" id="kiosk-pass" placeholder="Ej: 12345678" autocomplete="off" inputmode="numeric" pattern="[0-9]*"></div>
     <div class="kiosk-login-error" id="kiosk-error">Número de socio o DNI incorrecto</div>
     <button class="kiosk-login-btn" onclick="doKioskLogin()">Entrar →</button>
     <button class="kiosk-login-cancel" onclick="closeKioskLogin()">Cancelar</button>
@@ -765,11 +765,11 @@ function hideLoading(){document.getElementById('loading-overlay').classList.remo
 // ── LOGIN ────────────────────────────────────────────
 async function doLogin(){
   const u=document.getElementById('login-user').value.trim().padStart(3,'0');
-  const p=document.getElementById('login-pass').value.trim().toUpperCase();
+  const p=document.getElementById('login-pass').value.trim().replace(/[^0-9]/g,'');
   const err=document.getElementById('login-error');
   const btn=document.getElementById('login-btn');
   const s=SOCIOS[u];
-  if(!s||s.dni.toUpperCase()!==p){err.style.display='block';return;}
+  if(!s||s.dni.replace(/[^0-9]/g,'')!==p){err.style.display='block';return;}
   err.style.display='none';
   btn.innerHTML='<span class="spinner"></span>Entrando…';
   btn.disabled=true;
@@ -1437,9 +1437,9 @@ function closeKioskLogin(){
 
 function doKioskLogin(){
   const u=document.getElementById('kiosk-user').value.trim().padStart(3,'0');
-  const p=document.getElementById('kiosk-pass').value.trim().toUpperCase();
+  const p=document.getElementById('kiosk-pass').value.trim().replace(/[^0-9]/g,'');
   const s=SOCIOS[u];
-  if(!s||s.dni.toUpperCase()!==p){
+  if(!s||s.dni.replace(/[^0-9]/g,'')!==p){
     document.getElementById('kiosk-error').style.display='block';return;
   }
   closeKioskLogin();
