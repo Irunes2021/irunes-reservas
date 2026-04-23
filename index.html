@@ -1487,6 +1487,7 @@ function doKioskLogin(){
   loadReservas().then(function(){
     renderDate();renderFloor();renderStatus();renderCalGrid();
   });
+  loadNotas();
   loadSocioTel();
   // Remove and re-add click handlers for mesas
   getMesasActivas().forEach(function(id){
@@ -1654,7 +1655,19 @@ async function loadNotas(){
 function renderMisNotas(){
   const mias=notasData.filter(n=>n.socio_num===cu);
   const list=document.getElementById('notas-list');
+  if(!mias.length && notasData.length===0){
+    list.innerHTML='<div class="empty-state"><div class="empty-icon">⏳</div><p>Cargando notas…</p></div>';
+    loadNotas().then(function(){
+      const mias2=notasData.filter(n=>n.socio_num===cu);
+      if(!mias2.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">🧾</div><p>No tienes notas registradas.</p></div>';return;}
+      _paintNotas(mias2,list);
+    });
+    return;
+  }
   if(!mias.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">🧾</div><p>No tienes notas registradas.</p></div>';return;}
+  _paintNotas(mias,list);
+}
+function _paintNotas(mias,list){
   let html='';
   mias.forEach(function(n,idx){
     const d=new Date(n.created_at);
