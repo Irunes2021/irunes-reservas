@@ -1471,11 +1471,14 @@ function doKioskLogin(){
   document.getElementById('f-nombre').value=sN(u);
   document.getElementById('user-avatar').textContent=s.initials;
   document.getElementById('admin-badge').style.display='none';
-  // Hide admin tabs
+  // Hide or show admin tabs depending on user role
   document.querySelectorAll('.tab').forEach(function(tab){
     tab.dataset.prevDisplay=tab.style.display;
-    if(tab.classList.contains('admin-only')) tab.style.display='none';
+    if(tab.classList.contains('admin-only')){
+      tab.style.display=s.admin?'flex':'none';
+    }
   });
+  if(s.admin) document.getElementById('admin-badge').style.display='inline';
   // Show app without admin
   document.getElementById('kiosk-screen').classList.remove('show');
   document.getElementById('login-screen').style.display='none';
