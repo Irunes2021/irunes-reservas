@@ -180,6 +180,38 @@
   .btn-confirm{flex:1;padding:.88rem;background:var(--gold);color:var(--dark);border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:500;cursor:pointer;}
   .btn-confirm:hover{background:var(--gold-light);}
   .btn-back{padding:.88rem 1.2rem;background:none;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.92rem;cursor:pointer;color:var(--text-muted);}
+  /* ── SORTEO ── */
+  .sorteo-banner{background:linear-gradient(135deg,#7B2D8B,#4A1A6B);color:#fff;border-radius:12px;padding:.85rem 1rem;margin-bottom:.85rem;display:flex;align-items:center;gap:.75rem;}
+  .sorteo-banner-icon{font-size:1.6rem;flex-shrink:0;}
+  .sorteo-banner-text{flex:1;}
+  .sorteo-banner-title{font-family:'Playfair Display',serif;font-size:.95rem;font-weight:400;}
+  .sorteo-banner-sub{font-size:.72rem;opacity:.8;margin-top:.15rem;}
+  .sorteo-badge{display:inline-flex;align-items:center;gap:.3rem;background:rgba(123,45,139,.15);color:#7B2D8B;border:1px solid rgba(123,45,139,.3);border-radius:20px;font-size:.66rem;font-weight:600;padding:.18rem .55rem;}
+  .sorteo-card{background:var(--surface);border:1.5px solid rgba(123,45,139,.25);border-radius:14px;padding:.9rem 1rem;margin-bottom:.65rem;}
+  .sorteo-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem;}
+  .sorteo-card-title{font-family:'Playfair Display',serif;font-size:.95rem;}
+  .sorteo-card-meta{font-size:.72rem;color:var(--text-muted);margin-top:.15rem;}
+  .sorteo-estado{font-size:.65rem;font-weight:700;padding:.2rem .55rem;border-radius:20px;text-transform:uppercase;letter-spacing:.04em;}
+  .sorteo-estado.abierto{background:rgba(39,174,96,.15);color:#1a7a3c;}
+  .sorteo-estado.realizado{background:rgba(46,134,193,.15);color:#1A3A6B;}
+  .sorteo-estado.cerrado{background:rgba(192,57,43,.12);color:#a02020;}
+  .sorteo-inscritos{display:flex;gap:.6rem;margin:.5rem 0;flex-wrap:wrap;}
+  .sorteo-stat{background:rgba(123,45,139,.07);border-radius:8px;padding:.3rem .65rem;font-size:.72rem;color:#7B2D8B;}
+  .btn-sorteo{padding:.55rem 1rem;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.8rem;cursor:pointer;font-weight:500;transition:all .2s;}
+  .btn-sorteo.primary{background:#7B2D8B;color:#fff;}
+  .btn-sorteo.primary:hover{background:#6a2578;}
+  .btn-sorteo.danger{background:none;border:1px solid rgba(192,57,43,.35);color:var(--red);}
+  .btn-sorteo.outline{background:none;border:1px solid rgba(123,45,139,.35);color:#7B2D8B;}
+  .inscripcion-item{background:#fff;border:1px solid var(--border);border-radius:10px;padding:.6rem .85rem;margin-bottom:.4rem;display:flex;align-items:center;gap:.7rem;}
+  .inscripcion-num{font-family:'Playfair Display',serif;font-size:1rem;color:var(--text-muted);min-width:1.5rem;text-align:center;}
+  .inscripcion-num.ganador{color:#7B2D8B;font-weight:700;}
+  .inscripcion-info{flex:1;}
+  .inscripcion-nombre{font-size:.85rem;font-weight:500;}
+  .inscripcion-meta{font-size:.7rem;color:var(--text-muted);}
+  .ganador-mark{font-size:.75rem;color:#7B2D8B;font-weight:600;}
+  /* Mesas en modo sorteo */
+  .sorteo-activo-plano [id$="-bg"]{transition:fill .3s;}
+
   /* ── KIOSK MODE ── */
   #kiosk-screen{display:none;position:fixed;inset:0;z-index:300;flex-direction:row;align-items:stretch;background:#f0f4f8;}
   #kiosk-screen.show{display:flex;}
@@ -574,6 +606,7 @@
   <div id="tab-admin" class="content" style="display:none">
     <div class="admin-stats" id="admin-stats"></div>
     <button class="admin-create-btn" onclick="openAdminCreate()">+ Crear reserva manual</button>
+    <button class="admin-create-btn" style="border-color:#7B2D8B;color:#7B2D8B;background:rgba(123,45,139,.05)" onclick="openSorteoAdmin()">🎲 Gestionar sorteos de fiestas</button>
     <button class="admin-create-btn" style="border-color:#4A90D9;color:#4A90D9;background:rgba(74,144,217,.05)" onclick="enterKiosk()">🖥️ Activar modo quiosco (pantalla táctil)</button>
     <div class="section-title">Filtrar por turno</div>
     <div class="admin-filters">
@@ -664,6 +697,58 @@
     <div class="modal-actions">
       <button class="btn-back" onclick="closeSocioModal()">Cancelar</button>
       <button class="btn-confirm" onclick="saveSocio()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL SORTEOS (fullscreen overlay) -->
+<div id="sorteo-panel" style="display:none;position:fixed;inset:0;z-index:250;background:var(--cream);overflow-y:auto;">
+  <div style="background:var(--dark);padding:.85rem 1.25rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:0;z-index:10;">
+    <button onclick="closeSorteoAdmin()" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;line-height:1;padding:.2rem .4rem;">‹</button>
+    <span style="font-family:'Playfair Display',serif;color:#fff;font-size:1.05rem;">🎲 Sorteos de fiestas</span>
+  </div>
+  <div style="padding:1rem;">
+    <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.5;">
+      Los días marcados como fiesta permiten que varios socios se inscriban para el sorteo. El sorteo se realiza 20 días antes del evento y decide quién consigue mesa.
+    </div>
+    <button class="admin-create-btn" style="border-color:#7B2D8B;color:#7B2D8B;background:rgba(123,45,139,.05)" onclick="openNuevoSorteo()">+ Nuevo día de fiesta con sorteo</button>
+    <div class="section-title" style="margin-top:.5rem;">Próximos sorteos</div>
+    <div id="sorteo-lista"></div>
+  </div>
+</div>
+
+<!-- Modal nuevo sorteo -->
+<div class="modal-overlay" id="nuevo-sorteo-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3>Nuevo día de fiesta</h3>
+    <p>Los socios podrán inscribirse desde 45 días antes. El sorteo se realizará 20 días antes del evento.</p>
+    <div class="form-row"><label>Fecha del evento</label><input type="date" id="ns-fecha"></div>
+    <div class="form-row"><label>Turno</label>
+      <select id="ns-turno">
+        <option value="comida">🍽️ Comida</option>
+        <option value="merienda">☕ Merienda</option>
+        <option value="cena">🌙 Cena</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Descripción (opcional)</label><input type="text" id="ns-desc" placeholder="Ej: San Juan, Semana Grande…"></div>
+    <div class="modal-actions">
+      <button class="btn-back" onclick="closeNuevoSorteo()">Cancelar</button>
+      <button class="btn-confirm" onclick="crearSorteo()">Crear</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal detalle sorteo (inscripciones + ejecutar sorteo) -->
+<div class="modal-overlay" id="sorteo-detail-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3 id="sorteo-detail-title">Sorteo</h3>
+    <p id="sorteo-detail-sub" style="margin-bottom:.75rem;"></p>
+    <div id="sorteo-detail-body"></div>
+    <div class="modal-actions" style="margin-top:.75rem;">
+      <button class="btn-back" onclick="closeSorteoDetail()">Cerrar</button>
+      <button class="btn-confirm" id="btn-ejecutar-sorteo" onclick="ejecutarSorteo()" style="background:#7B2D8B;">🎲 Realizar sorteo</button>
     </div>
   </div>
 </div>
@@ -1787,22 +1872,505 @@ function renderLimpieza(todas, today, maxD){
   document.getElementById('limp-body').innerHTML = html;
 }
 
-// Arranque: cargar socios y luego iniciar
+// Arranque: cargar socios, reservas y sorteos
 (async function(){
   showLoading('Cargando…');
   await loadSocios();
+  await Promise.all([loadReservas(), loadSorteos()]);
   hideLoading();
   const modo=new URLSearchParams(window.location.search).get('modo');
   if(modo==='quiosco'){
     document.getElementById('btn-inicio').style.display='block';
-    await loadReservas();
     enterKiosk();
   } else if(modo==='limpieza'){
     enterLimpieza();
   }
+  renderDate();
 })();
 
-renderDate();
+// ══════════════════════════════════════════════════════
+//  SISTEMA DE SORTEOS DE FIESTAS
+// ══════════════════════════════════════════════════════
+
+// Estado sorteos
+let sorteos = [];         // eventos de sorteo cargados
+let inscripciones = [];   // inscripciones cargadas
+let sorteoActualId = null; // sorteo abierto en detalle
+
+// Colores especiales para modo sorteo en el plano
+const FILL_SORTEO = '#7B2D8B';  // púrpura = inscrito para sorteo
+const FILL_SORTEO_MIO = '#E67E22'; // naranja = mi inscripción
+
+// ── Cargar sorteos e inscripciones ──────────────────
+async function loadSorteos() {
+  const today = fmt(new Date());
+  const [rs, ri] = await Promise.all([
+    sb.from('sorteos').select('*').order('fecha'),
+    sb.from('inscripciones_sorteo').select('*').order('created_at')
+  ]);
+  sorteos = (rs.data || []);
+  inscripciones = (ri.data || []);
+}
+
+// Devuelve el sorteo activo para una fecha+turno (si existe y está abierto)
+function getSorteoActivo(fecha, turno) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  return sorteos.find(s => {
+    if (s.fecha !== fecha || s.turno !== turno) return false;
+    const fEvento = new Date(s.fecha + 'T12:00:00');
+    const diasHastaEvento = Math.round((fEvento - today) / 86400000);
+    // Inscripción abierta: entre 45 y 20 días antes
+    return diasHastaEvento <= 45 && diasHastaEvento > 20 && s.estado !== 'realizado';
+  });
+}
+
+// Devuelve sorteo de cualquier estado para fecha+turno
+function getSorteo(fecha, turno) {
+  return sorteos.find(s => s.fecha === fecha && s.turno === turno) || null;
+}
+
+// ── Renderizar plano con conciencia de sorteo ────────
+// Sobreescribe renderFloor para añadir lógica sorteo
+const _renderFloorOrig = renderFloor;
+function renderFloor() {
+  const f = fmt(cDate);
+  const sorteo = getSorteo(f, cTurno);
+  const mesaExt = document.getElementById('mesa-5');
+  if (mesaExt) mesaExt.style.display = 'block';
+
+  // Banner de sorteo activo
+  const existingBanner = document.getElementById('sorteo-plano-banner');
+  if (existingBanner) existingBanner.remove();
+
+  if (sorteo) {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const fEvento = new Date(sorteo.fecha + 'T12:00:00');
+    const dias = Math.round((fEvento - today) / 86400000);
+    const estaAbierto = dias <= 45 && dias > 20 && sorteo.estado !== 'realizado';
+    const misInscrip = inscripciones.filter(i => i.sorteo_id === sorteo.id && i.socio_num === cu);
+    const yaInscrito = misInscrip.length > 0;
+
+    let bannerHtml = '';
+    if (sorteo.estado === 'realizado') {
+      const gane = inscripciones.find(i => i.sorteo_id === sorteo.id && i.socio_num === cu && i.ganador);
+      bannerHtml = `<div id="sorteo-plano-banner" class="sorteo-banner" style="margin-bottom:.85rem;">
+        <div class="sorteo-banner-icon">${gane ? '🏆' : '🎲'}</div>
+        <div class="sorteo-banner-text">
+          <div class="sorteo-banner-title">${gane ? '¡Conseguiste mesa!' : 'Sorteo realizado'}</div>
+          <div class="sorteo-banner-sub">${gane ? 'Tu reserva está confirmada' : 'No resultaste seleccionado en el sorteo'}</div>
+        </div>
+      </div>`;
+    } else if (estaAbierto) {
+      bannerHtml = `<div id="sorteo-plano-banner" class="sorteo-banner" style="margin-bottom:.85rem;">
+        <div class="sorteo-banner-icon">🎲</div>
+        <div class="sorteo-banner-text">
+          <div class="sorteo-banner-title">Día de fiesta · Sorteo${sorteo.descripcion?' — '+sorteo.descripcion:''}</div>
+          <div class="sorteo-banner-sub">${yaInscrito ? '✓ Ya estás inscrito al sorteo' : 'Inscríbete para participar en el sorteo. El resultado se publicará en '+dias+' días.'}</div>
+        </div>
+      </div>`;
+    } else if (dias > 20) {
+      bannerHtml = `<div id="sorteo-plano-banner" class="sorteo-banner" style="margin-bottom:.85rem;background:linear-gradient(135deg,#555,#333);">
+        <div class="sorteo-banner-icon">📅</div>
+        <div class="sorteo-banner-text">
+          <div class="sorteo-banner-title">Día de fiesta${sorteo.descripcion?' — '+sorteo.descripcion:''}</div>
+          <div class="sorteo-banner-sub">Las inscripciones se abrirán en ${dias - 45} días</div>
+        </div>
+      </div>`;
+    }
+
+    if (bannerHtml) {
+      const statusPanel = document.getElementById('status-panel');
+      statusPanel.insertAdjacentHTML('beforebegin', bannerHtml);
+    }
+  }
+
+  getMesasActivas().forEach(id => {
+    const res = getRes(id, cTurno, f);
+    const isSel = selMesas.includes(id);
+
+    if (sorteo && sorteo.estado !== 'realizado') {
+      // Modo sorteo: mostrar inscripciones, no reservas normales
+      const today2 = new Date(); today2.setHours(0,0,0,0);
+      const fEvento2 = new Date(sorteo.fecha + 'T12:00:00');
+      const dias2 = Math.round((fEvento2 - today2) / 86400000);
+      const estaAbierto2 = dias2 <= 45 && dias2 > 20;
+
+      const inscrip = inscripciones.filter(i => i.sorteo_id === sorteo.id && i.mesas && i.mesas.includes(id));
+      const miInscrip = inscrip.find(i => i.socio_num === cu);
+      const hayInscrip = inscrip.length > 0;
+
+      let fillColor = FILL.libre;
+      if (miInscrip) fillColor = FILL_SORTEO_MIO;
+      else if (hayInscrip) fillColor = FILL_SORTEO;
+
+      document.getElementById('m'+id+'-bg').setAttribute('fill', fillColor);
+      document.getElementById('m'+id+'-bg').setAttribute('stroke', isSel ? '#fff' : fillColor);
+      document.getElementById('m'+id+'-bg').setAttribute('stroke-width', isSel ? '5' : '3');
+      const sub = document.getElementById('m'+id+'-sub');
+      sub.textContent = miInscrip ? '✓ Tu inscripción' : hayInscrip ? inscrip.length+' inscrito'+(inscrip.length>1?'s':'') : (isSel ? '✓ Seleccionada' : '');
+      document.getElementById('mesa-'+id).style.cursor = estaAbierto2 ? 'pointer' : 'default';
+    } else {
+      // Modo normal
+      const libre = !res, esMia = res && res.socio_num === cu;
+      document.getElementById('m'+id+'-bg').setAttribute('fill', libre ? FILL.libre : esMia ? FILL.mia : FILL.occupied);
+      document.getElementById('m'+id+'-bg').setAttribute('stroke', isSel ? '#fff' : libre ? COL.libre : esMia ? COL.mia : COL.occupied);
+      document.getElementById('m'+id+'-bg').setAttribute('stroke-width', isSel ? '5' : '3');
+      const sub = document.getElementById('m'+id+'-sub');
+      sub.textContent = libre ? (isSel ? '✓ Seleccionada' : '') : (esMia ? '✓ Tu reserva' : sN(res.socio_num).split(' ')[0] + ' · ' + res.comensales + ' pers.');
+      document.getElementById('mesa-'+id).style.cursor = libre || isAdmin() ? 'pointer' : 'not-allowed';
+    }
+  });
+}
+
+// ── Click en mesa con conciencia de sorteo ───────────
+const _handleClickOrig = handleClick;
+function handleClick(id) {
+  const f = fmt(cDate);
+  const sorteo = getSorteo(f, cTurno);
+
+  if (sorteo && sorteo.estado !== 'realizado') {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const fEvento = new Date(sorteo.fecha + 'T12:00:00');
+    const dias = Math.round((fEvento - today) / 86400000);
+    const estaAbierto = dias <= 45 && dias > 20;
+    if (!estaAbierto) return;
+
+    // En modo sorteo: seleccionar mesas para inscripción
+    const misInscrip = inscripciones.filter(i => i.sorteo_id === sorteo.id && i.socio_num === cu);
+    if (misInscrip.length > 0) { showToast('Ya estás inscrito en este sorteo'); return; }
+
+    if (selMesas.includes(id)) {
+      selMesas = selMesas.filter(m => m !== id);
+    } else {
+      selMesas.push(id); selMesas.sort();
+    }
+    updateReservaFormSorteo(sorteo);
+    renderFloor();
+  } else {
+    _handleClickOrig(id);
+  }
+}
+
+// Formulario de reserva adaptado para sorteo
+function updateReservaFormSorteo(sorteo) {
+  if (selMesas.length === 0) {
+    document.getElementById('reserva-form').classList.remove('visible');
+    return;
+  }
+  const maxComs = selMesas.reduce((a, m) => a + MESA_MAX[m], 0);
+  const defComs = selMesas.reduce((a, m) => a + Math.min(8, MESA_MAX[m]), 0);
+  if (coms > maxComs || coms < 1) coms = defComs;
+  document.getElementById('f-coms').textContent = coms;
+  document.getElementById('f-coms-max').textContent = 'máx. ' + maxComs;
+  const mesasLabel = selMesas.length === 1 ? 'Mesa ' + selMesas[0] : 'Mesas ' + selMesas.join(' + ');
+  document.getElementById('form-title').textContent = '🎲 Inscripción sorteo · ' + mesasLabel;
+  if (socioTel) document.getElementById('f-tel').value = socioTel;
+  document.getElementById('reserva-form').classList.add('visible');
+  // Cambiar botón
+  document.querySelector('.btn-reservar').textContent = 'Inscribirme al sorteo →';
+  document.querySelector('.btn-reservar').style.background = '#7B2D8B';
+  setTimeout(() => document.getElementById('reserva-form').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+}
+
+// Sobreescribir openConfirm para modo sorteo
+const _openConfirmOrig = openConfirm;
+function openConfirm() {
+  const f = fmt(cDate);
+  const sorteo = getSorteo(f, cTurno);
+  if (sorteo && sorteo.estado !== 'realizado') {
+    openConfirmSorteo(sorteo);
+    return;
+  }
+  // Restaurar botón por si acaso
+  document.querySelector('.btn-reservar').textContent = 'Confirmar reserva →';
+  document.querySelector('.btn-reservar').style.background = '';
+  _openConfirmOrig();
+}
+
+function openConfirmSorteo(sorteo) {
+  if (selMesas.length === 0) return;
+  if (!document.getElementById('f-tel').value.trim()) { showToast('Introduce un teléfono de contacto'); return; }
+  const cd = new Date(cDate);
+  const fStr = DIAS[cd.getDay()] + ', ' + cd.getDate() + ' de ' + MESES[cd.getMonth()];
+  const mesasLabel = selMesas.length === 1 ? 'Mesa ' + selMesas[0] : 'Mesas ' + selMesas.join(' + ');
+  document.getElementById('modal-summary').innerHTML =
+    '<div class="summary-row"><span>Socio</span><span>' + sN(cu) + '</span></div>' +
+    '<div class="summary-row"><span>' + (selMesas.length === 1 ? 'Mesa' : 'Mesas') + '</span><span>' + mesasLabel + '</span></div>' +
+    '<div class="summary-row"><span>Fecha</span><span>' + fStr + '</span></div>' +
+    '<div class="summary-row"><span>Turno</span><span>' + TL[cTurno] + '</span></div>' +
+    '<div class="summary-row"><span>Comensales</span><span>' + coms + ' personas</span></div>' +
+    '<div class="summary-row"><span>Teléfono</span><span>' + document.getElementById('f-tel').value + '</span></div>' +
+    '<div style="margin-top:.65rem;padding:.6rem .75rem;background:rgba(123,45,139,.1);border-radius:8px;font-size:.78rem;color:#7B2D8B;line-height:1.5;">⚠️ Esta inscripción queda <strong>pendiente de sorteo</strong>. El resultado se publicará aproximadamente 20 días antes del evento.</div>';
+  document.getElementById('confirm-modal').classList.add('show');
+  document.getElementById('btn-confirm-ok').textContent = 'Inscribirme';
+  document.getElementById('btn-confirm-ok').onclick = () => doInscripcionSorteo(sorteo);
+}
+
+async function doInscripcionSorteo(sorteo) {
+  const btn = document.getElementById('btn-confirm-ok');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  const tel = document.getElementById('f-tel').value;
+  const obs = document.getElementById('f-obs').value;
+
+  const inscripcion = {
+    sorteo_id: sorteo.id,
+    socio_num: cu,
+    mesas: selMesas,
+    comensales: coms,
+    tel,
+    obs,
+    ganador: false
+  };
+  const { data, error } = await sb.from('inscripciones_sorteo').insert([inscripcion]).select();
+  if (error) { showToast('Error al inscribirse'); console.error(error); btn.disabled = false; btn.textContent = 'Inscribirme'; return; }
+  inscripciones.push(data[0]);
+
+  saveSocioTel(tel);
+  btn.disabled = false; btn.textContent = 'Confirmar';
+  btn.onclick = doReserva;
+  closeConfirm();
+  selMesas = [];
+  document.getElementById('reserva-form').classList.remove('visible');
+  document.querySelector('.btn-reservar').textContent = 'Confirmar reserva →';
+  document.querySelector('.btn-reservar').style.background = '';
+  renderFloor(); renderStatus();
+  showToast('✓ Inscripción al sorteo guardada');
+}
+
+// ── Mis reservas: incluir inscripciones pendientes ───
+const _renderMisReservasOrig = renderMisReservas;
+function renderMisReservas() {
+  _renderMisReservasOrig();
+  // Añadir inscripciones pendientes al principio
+  const misInscrip = inscripciones.filter(i => i.socio_num === cu);
+  if (!misInscrip.length) return;
+  const list = document.getElementById('mis-reservas-list');
+  let html = '<div class="section-title" style="margin-bottom:.5rem;">Inscripciones a sorteos</div>';
+  misInscrip.forEach(i => {
+    const sorteo = sorteos.find(s => s.id === i.sorteo_id);
+    if (!sorteo) return;
+    const d = new Date(sorteo.fecha + 'T12:00:00');
+    const mesasLabel = i.mesas.length === 1 ? 'Mesa ' + i.mesas[0] : 'Mesas ' + i.mesas.join(' + ');
+    const estado = sorteo.estado === 'realizado'
+      ? (i.ganador ? '<span style="color:#27AE60;font-weight:600">✓ Seleccionado</span>' : '<span style="color:#C0392B">No seleccionado</span>')
+      : '<span class="sorteo-badge">⏳ Pendiente de sorteo</span>';
+    html += '<div class="reserva-item" style="border-color:rgba(123,45,139,.25)">' +
+      '<div class="reserva-date-box" style="background:#7B2D8B;"><div class="rday">' + d.getDate() + '</div><div class="rmonth">' + MESES_C[d.getMonth()] + '</div></div>' +
+      '<div class="reserva-info">' +
+      '<div class="mesa-name">🎲 ' + mesasLabel + '</div>' +
+      '<div class="reserva-meta">' + i.comensales + ' comensales · <span class="reserva-turno">' + TL[sorteo.turno] + '</span></div>' +
+      (sorteo.descripcion ? '<div class="reserva-meta">🎉 ' + sorteo.descripcion + '</div>' : '') +
+      '<div class="reserva-meta" style="margin-top:.25rem;">' + estado + '</div>' +
+      '</div>' +
+      (sorteo.estado !== 'realizado' ? '<button class="btn-cancelar" onclick="cancelarInscripcion(\'' + i.id + '\')">Cancelar</button>' : '') +
+      '</div>';
+  });
+  list.insertAdjacentHTML('afterbegin', html);
+}
+
+async function cancelarInscripcion(id) {
+  if (!confirm('¿Cancelar tu inscripción al sorteo?')) return;
+  const { error } = await sb.from('inscripciones_sorteo').delete().eq('id', id);
+  if (error) { showToast('Error al cancelar'); return; }
+  inscripciones = inscripciones.filter(i => i.id !== id);
+  renderMisReservas(); renderFloor();
+  showToast('Inscripción cancelada');
+}
+
+// ── ADMIN: Panel de gestión de sorteos ──────────────
+async function openSorteoAdmin() {
+  showLoading('Cargando sorteos…');
+  await loadSorteos();
+  hideLoading();
+  renderSorteoLista();
+  document.getElementById('sorteo-panel').style.display = 'block';
+}
+function closeSorteoAdmin() {
+  document.getElementById('sorteo-panel').style.display = 'none';
+}
+
+function renderSorteoLista() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const proximos = sorteos.filter(s => new Date(s.fecha + 'T12:00:00') >= today).sort((a, b) => a.fecha.localeCompare(b.fecha));
+  const pasados = sorteos.filter(s => new Date(s.fecha + 'T12:00:00') < today).sort((a, b) => b.fecha.localeCompare(a.fecha));
+  const lista = document.getElementById('sorteo-lista');
+
+  if (!proximos.length && !pasados.length) {
+    lista.innerHTML = '<div class="empty-state"><div class="empty-icon">🎲</div><p>No hay sorteos creados todavía.</p></div>';
+    return;
+  }
+
+  let html = '';
+  [...proximos, ...pasados].forEach(s => {
+    const d = new Date(s.fecha + 'T12:00:00');
+    const fEvento = d;
+    const dias = Math.round((fEvento - today) / 86400000);
+    const inscritos = inscripciones.filter(i => i.sorteo_id === s.id);
+    const turnoLabel = TL[s.turno] || s.turno;
+
+    let estadoLabel = '', estadoClass = '';
+    if (s.estado === 'realizado') { estadoLabel = 'Realizado'; estadoClass = 'realizado'; }
+    else if (dias < 0) { estadoLabel = 'Pasado'; estadoClass = 'cerrado'; }
+    else if (dias > 45) { estadoLabel = 'Próximamente'; estadoClass = 'cerrado'; }
+    else if (dias > 20) { estadoLabel = 'Inscripciones abiertas'; estadoClass = 'abierto'; }
+    else { estadoLabel = 'Pendiente sorteo'; estadoClass = 'cerrado'; }
+
+    html += '<div class="sorteo-card">' +
+      '<div class="sorteo-card-header">' +
+      '<div>' +
+      '<div class="sorteo-card-title">' + (s.descripcion || 'Día festivo') + '</div>' +
+      '<div class="sorteo-card-meta">' + DIAS[d.getDay()] + ', ' + d.getDate() + ' de ' + MESES[d.getMonth()] + ' · ' + turnoLabel + '</div>' +
+      '</div>' +
+      '<span class="sorteo-estado ' + estadoClass + '">' + estadoLabel + '</span>' +
+      '</div>' +
+      '<div class="sorteo-inscritos">' +
+      '<span class="sorteo-stat">👥 ' + inscritos.length + ' inscritos</span>' +
+      (dias >= 0 && dias <= 20 && s.estado !== 'realizado' ? '<span class="sorteo-stat" style="color:#C0392B">🎲 Sorteo pendiente</span>' : '') +
+      '</div>' +
+      '<div style="display:flex;gap:.5rem;flex-wrap:wrap;">' +
+      '<button class="btn-sorteo outline" onclick="verDetalleSorteo(\'' + s.id + '\')">Ver inscritos</button>' +
+      (s.estado !== 'realizado' ? '<button class="btn-sorteo primary" onclick="verDetalleSorteo(\'' + s.id + '\',true)">🎲 Realizar sorteo</button>' : '') +
+      '<button class="btn-sorteo danger" onclick="eliminarSorteo(\'' + s.id + '\')">Eliminar</button>' +
+      '</div>' +
+      '</div>';
+  });
+  lista.innerHTML = html;
+}
+
+function openNuevoSorteo() {
+  const today = new Date();
+  document.getElementById('ns-fecha').value = fmt(today);
+  document.getElementById('ns-desc').value = '';
+  document.getElementById('nuevo-sorteo-modal').classList.add('show');
+}
+function closeNuevoSorteo() { document.getElementById('nuevo-sorteo-modal').classList.remove('show'); }
+
+async function crearSorteo() {
+  const fecha = document.getElementById('ns-fecha').value;
+  const turno = document.getElementById('ns-turno').value;
+  const descripcion = document.getElementById('ns-desc').value.trim();
+  if (!fecha) { showToast('Selecciona una fecha'); return; }
+  if (sorteos.find(s => s.fecha === fecha && s.turno === turno)) { showToast('Ya existe un sorteo para ese día y turno'); return; }
+  const { data, error } = await sb.from('sorteos').insert([{ fecha, turno, descripcion, estado: 'abierto' }]).select();
+  if (error) { showToast('Error al crear sorteo'); console.error(error); return; }
+  sorteos.push(data[0]);
+  closeNuevoSorteo();
+  renderSorteoLista();
+  showToast('✓ Sorteo creado · ' + fecha);
+}
+
+async function eliminarSorteo(id) {
+  const s = sorteos.find(x => x.id === id);
+  const numInscritos = inscripciones.filter(i => i.sorteo_id === id).length;
+  if (!confirm('¿Eliminar este sorteo' + (numInscritos ? ' y sus ' + numInscritos + ' inscripciones' : '') + '?')) return;
+  await sb.from('inscripciones_sorteo').delete().eq('sorteo_id', id);
+  await sb.from('sorteos').delete().eq('id', id);
+  sorteos = sorteos.filter(x => x.id !== id);
+  inscripciones = inscripciones.filter(i => i.sorteo_id !== id);
+  renderSorteoLista();
+  showToast('Sorteo eliminado');
+}
+
+function verDetalleSorteo(id, mostrarBotonSorteo = false) {
+  sorteoActualId = id;
+  const s = sorteos.find(x => x.id === id);
+  const d = new Date(s.fecha + 'T12:00:00');
+  document.getElementById('sorteo-detail-title').textContent = (s.descripcion || 'Sorteo') + ' · ' + d.getDate() + ' de ' + MESES[d.getMonth()];
+  document.getElementById('sorteo-detail-sub').textContent = TL[s.turno] + ' · ' + DIAS[d.getDay()];
+
+  const inscritos = inscripciones.filter(i => i.sorteo_id === id);
+  const btnSorteo = document.getElementById('btn-ejecutar-sorteo');
+
+  if (s.estado === 'realizado' || !mostrarBotonSorteo) {
+    btnSorteo.style.display = 'none';
+  } else {
+    btnSorteo.style.display = '';
+  }
+
+  renderDetalleInscripciones(inscritos, s.estado === 'realizado');
+  document.getElementById('sorteo-detail-modal').classList.add('show');
+}
+
+function renderDetalleInscripciones(inscritos, realizado) {
+  if (!inscritos.length) {
+    document.getElementById('sorteo-detail-body').innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">👥</div><p>Nadie inscrito todavía.</p></div>';
+    return;
+  }
+  let html = '<div style="font-size:.72rem;color:var(--text-muted);margin-bottom:.6rem;">' + inscritos.length + ' inscripciones</div>';
+  inscritos.forEach((i, idx) => {
+    const mesasLabel = i.mesas.length === 1 ? 'Mesa ' + i.mesas[0] : 'Mesas ' + i.mesas.join('+');
+    const esGanador = i.ganador;
+    html += '<div class="inscripcion-item" style="' + (esGanador ? 'border-color:#7B2D8B;background:rgba(123,45,139,.05)' : '') + '">' +
+      '<div class="inscripcion-num ' + (esGanador ? 'ganador' : '') + '">' + (idx + 1) + '</div>' +
+      '<div class="inscripcion-info">' +
+      '<div class="inscripcion-nombre">' + sN(i.socio_num) + '</div>' +
+      '<div class="inscripcion-meta">' + mesasLabel + ' · ' + i.comensales + ' comensales</div>' +
+      (i.tel ? '<div class="inscripcion-meta">📞 ' + i.tel + '</div>' : '') +
+      '</div>' +
+      (realizado ? '<div class="' + (esGanador ? 'ganador-mark' : '') + '">' + (esGanador ? '🏆 Ganador' : '') + '</div>' : '') +
+      '</div>';
+  });
+  document.getElementById('sorteo-detail-body').innerHTML = html;
+}
+
+function closeSorteoDetail() { document.getElementById('sorteo-detail-modal').classList.remove('show'); }
+
+async function ejecutarSorteo() {
+  const s = sorteos.find(x => x.id === sorteoActualId);
+  const inscritos = inscripciones.filter(i => i.sorteo_id === sorteoActualId);
+  if (!inscritos.length) { showToast('No hay inscripciones'); return; }
+  if (!confirm('¿Realizar el sorteo ahora? Se elegirán los ganadores aleatoriamente entre ' + inscritos.length + ' inscritos.\n\nEsta acción no se puede deshacer.')) return;
+
+  showLoading('Realizando sorteo…');
+
+  // Barajar aleatoriamente (Fisher-Yates)
+  const barajados = [...inscritos];
+  for (let i = barajados.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [barajados[i], barajados[j]] = [barajados[j], barajados[i]];
+  }
+
+  // Determinar ganadores: verificar que las mesas no estén ya ocupadas
+  const mesasAsignadas = new Set();
+  const ganadores = [];
+  const perdedores = [];
+
+  for (const ins of barajados) {
+    const mesasLibres = ins.mesas.every(m => !mesasAsignadas.has(m));
+    if (mesasLibres) {
+      ins.mesas.forEach(m => mesasAsignadas.add(m));
+      ganadores.push(ins);
+    } else {
+      perdedores.push(ins);
+    }
+  }
+
+  // Guardar resultados en Supabase
+  for (const ins of ganadores) {
+    await sb.from('inscripciones_sorteo').update({ ganador: true }).eq('id', ins.id);
+    inscripciones.find(i => i.id === ins.id).ganador = true;
+    // Crear reserva real por cada mesa ganada
+    for (const mesa of ins.mesas) {
+      const r = { socio_num: ins.socio_num, mesa, turno: s.turno, fecha: s.fecha, comensales: ins.comensales, tel: ins.tel || '', obs: ins.obs || '' };
+      const saved = await saveReserva(r);
+      if (saved) reservas.push(saved);
+    }
+  }
+
+  // Marcar sorteo como realizado
+  await sb.from('sorteos').update({ estado: 'realizado' }).eq('id', sorteoActualId);
+  sorteos.find(x => x.id === sorteoActualId).estado = 'realizado';
+
+  hideLoading();
+  renderSorteoLista();
+
+  // Mostrar resultado
+  const inscritos2 = inscripciones.filter(i => i.sorteo_id === sorteoActualId);
+  renderDetalleInscripciones(inscritos2, true);
+  document.getElementById('btn-ejecutar-sorteo').style.display = 'none';
+
+  showToast('🏆 Sorteo realizado · ' + ganadores.length + ' ganadores');
+}
 </script>
 </body>
 </html>
