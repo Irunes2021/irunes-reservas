@@ -722,12 +722,11 @@
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <h3>Nuevo día de fiesta</h3>
-    <p>Los socios podrán inscribirse desde 45 días antes. Las inscripciones se cerrarán 20 días antes del evento. El sorteo se realiza manualmente.</p>
+    <p>Los socios podrán inscribirse libremente hasta que cierres el sorteo manualmente. Los días de sorteo no admiten reservas para merienda.</p>
     <div class="form-row"><label>Fecha del evento</label><input type="date" id="ns-fecha"></div>
     <div class="form-row"><label>Turno</label>
       <select id="ns-turno">
         <option value="comida">🍽️ Comida</option>
-        <option value="merienda">☕ Merienda</option>
         <option value="cena">🌙 Cena</option>
       </select>
     </div>
@@ -841,11 +840,11 @@ const DIAS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'
 const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const MESES_C=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const TL={comida:'Comida 🍽️',merienda:'Merienda ☕',cena:'Cena 🌙'};
-const COL={libre:'#27AE60',occupied:'#C0392B',mia:'#CA6F1E'};
+const COL={libre:'#27AE60',occupied:'#C0392B',mia:'#CA6F1E',bloqueado:'#666',aviso:'#D4AC0D'};
 const MESA_MAX={1:9,2:9,3:9,4:11,5:12};
 const MESA_EXTERIOR=5;
 const MESES_EXTERIOR=[3,4,5,6,7,8,9]; // abril(3) a octubre(9)
-const FILL={libre:'#2E86C1',occupied:'#B03020',mia:'#E67E22'};
+const FILL={libre:'#2E86C1',occupied:'#B03020',mia:'#E67E22',bloqueado:'#3a3a3a',aviso:'#7D6608'};
 
 // ── ESTADO ───────────────────────────────────────────
 let cu=null, cDate=new Date(), cTurno='comida', selMesas=[], socioTel='', enModoQuiosco=false, kioskMode=false;
@@ -860,6 +859,48 @@ function getMesasActivas(){
 function sN(id){const s=SOCIOS[id];return s?s.nombre+' '+s.apellidos:'';}
 function isAdmin(){return !!(SOCIOS[cu]?.admin);}
 function getRes(m,t,f){return reservas.find(r=>r.mesa===m&&r.turno===t&&r.fecha===f)||null;}
+
+// ── BLOQUEOS ENTRE TURNOS ───────────────────────────────────────────
+// Si en una misma mesa y día hay reserva en un turno, ¿qué pasa con los demás?
+//   comida   → bloquea merienda (la sobremesa puede alargarse)
+//   merienda → comida con aviso (libre y recogida a las 17:00)
+//   cena     → independiente, no afecta ni le afectan
+const BLOQUEOS_TURNO = {
+  comida:   { merienda: 'bloqueado', cena: 'libre' },
+  merienda: { comida:   'aviso',     cena: 'libre' },
+  cena:     { comida:   'libre',     merienda: 'libre' }
+};
+
+// Devuelve 'bloqueado' | 'aviso' | 'libre' según los demás turnos reservados
+// en esa misma mesa y día, y según si el día está reservado para sorteo.
+function estadoBloqueo(mesa, turno, fecha){
+  // Regla 1: en un día con sorteo (cualquier turno), no se puede reservar merienda
+  if(turno === 'merienda'){
+    const sd = (typeof sorteos !== 'undefined' && Array.isArray(sorteos))
+      ? sorteos.find(s => s.fecha === fecha && s.estado !== 'realizado')
+      : null;
+    if(sd) return 'bloqueado';
+  }
+  // Regla 2: bloqueos por reservas en otros turnos en la misma mesa+día
+  const otrosTurnos = reservas.filter(r => r.mesa === mesa && r.fecha === fecha && r.turno !== turno);
+  let estado = 'libre';
+  for(const r of otrosTurnos){
+    const efecto = (BLOQUEOS_TURNO[r.turno] || {})[turno] || 'libre';
+    if(efecto === 'bloqueado') return 'bloqueado';
+    if(efecto === 'aviso') estado = 'aviso';
+  }
+  return estado;
+}
+
+// Mensaje legible del aviso para mostrar al socio
+function avisoBloqueo(mesa, turno, fecha){
+  const otros = reservas.filter(r => r.mesa === mesa && r.fecha === fecha && r.turno !== turno);
+  const tieneMerienda = otros.some(r => r.turno === 'merienda');
+  if(turno === 'comida' && tieneMerienda){
+    return 'Hay una merienda reservada en esta mesa. Debes dejarla libre y recogida antes de las 17:00.';
+  }
+  return null;
+}
 
 // Devuelve el sorteo no realizado para esa fecha+turno (o null si no es día de sorteo)
 function getSorteoFecha(fechaStr, turno){
@@ -877,6 +918,13 @@ function getInscripcionesSorteo(sorteoId){
 function getMiInscripcion(sorteoId){
   if(!cu) return null;
   return getInscripcionesSorteo(sorteoId).find(i => String(i.socio_num) === String(cu)) || null;
+}
+
+// Devuelve cualquier sorteo no realizado en esta fecha (cualquier turno).
+// Útil para saber si el día está reservado para sorteo (y no admite merienda).
+function getSorteoDia(fecha){
+  if(typeof sorteos === 'undefined' || !Array.isArray(sorteos)) return null;
+  return sorteos.find(s => s.fecha === fecha && s.estado !== 'realizado') || null;
 }
 
 // Límite de antelación para reservas:
@@ -1084,7 +1132,15 @@ function renderFloor(){
   // Banner sorteo
   const oldBanner=document.getElementById('sorteo-plano-banner');
   if(oldBanner) oldBanner.remove();
-  if(sorteo){
+  // ¿Hay sorteo en este día (cualquier turno) que bloquee la merienda?
+  const sorteoDia = getSorteoDia(f);
+  const meriendaBloqueadaSorteo = sorteoDia && cTurno === 'merienda';
+
+  if(meriendaBloqueadaSorteo){
+    // Banner explicativo de merienda bloqueada
+    const bHtml = `<div id="sorteo-plano-banner" class="sorteo-banner" style="margin-bottom:.85rem;background:linear-gradient(135deg,#7B2D8B,#5a2168);"><div class="sorteo-banner-icon">🚫</div><div class="sorteo-banner-text"><div class="sorteo-banner-title">Merienda no disponible</div><div class="sorteo-banner-sub">Este día está reservado para un sorteo de ${TL[sorteoDia.turno]||sorteoDia.turno}, no se admiten reservas de merienda.</div></div></div>`;
+    document.getElementById('status-panel').insertAdjacentHTML('beforebegin',bHtml);
+  } else if(sorteo){
     const yaInscrito=inscripciones.some(i=>i.sorteo_id===sorteo.id&&String(i.socio_num)===String(cu));
     const miInscripcion=inscripciones.find(i=>i.sorteo_id===sorteo.id&&String(i.socio_num)===String(cu));
     let bHtml='';
@@ -1123,11 +1179,35 @@ function renderFloor(){
       document.getElementById('m'+id+'-sub').textContent=miIns?'✓ Tu preferencia':inscrip.length?inscrip.length+' inscrito'+(inscrip.length>1?'s':''):(isSel?'✓ Seleccionada':'');
       document.getElementById('mesa-'+id).style.cursor='pointer';
     } else {
-      document.getElementById('m'+id+'-bg').setAttribute('fill',libre?FILL.libre:esMia?FILL.mia:FILL.occupied);
-      document.getElementById('m'+id+'-bg').setAttribute('stroke',isSel?'#fff':libre?COL.libre:esMia?COL.mia:COL.occupied);
-      document.getElementById('m'+id+'-bg').setAttribute('stroke-width',isSel?'5':'3');
-      document.getElementById('m'+id+'-sub').textContent=libre?(isSel?'✓ Seleccionada':''):(esMia?'✓ Tu reserva':sN(res.socio_num).split(' ')[0]+' · '+res.comensales+' pers.');
-      document.getElementById('mesa-'+id).style.cursor=libre||isAdmin()?'pointer':'not-allowed';
+      // Modo normal: comprobar bloqueos entre turnos para mesas libres
+      const bloqueo = libre ? estadoBloqueo(id, cTurno, f) : 'libre';
+      let fillC, strokeC, sub, cursor;
+      if(libre && bloqueo === 'bloqueado'){
+        fillC = FILL.bloqueado; strokeC = COL.bloqueado;
+        sub = '🚫 No disponible';
+        cursor = 'not-allowed';
+      } else if(libre && bloqueo === 'aviso'){
+        fillC = FILL.aviso; strokeC = isSel ? '#fff' : COL.aviso;
+        sub = isSel ? '✓ Seleccionada · ⚠️ Libre 17:00' : '⚠️ Libre 17:00';
+        cursor = 'pointer';
+      } else if(libre){
+        fillC = FILL.libre; strokeC = isSel ? '#fff' : COL.libre;
+        sub = isSel ? '✓ Seleccionada' : '';
+        cursor = 'pointer';
+      } else if(esMia){
+        fillC = FILL.mia; strokeC = isSel ? '#fff' : COL.mia;
+        sub = '✓ Tu reserva';
+        cursor = isAdmin() ? 'pointer' : 'not-allowed';
+      } else {
+        fillC = FILL.occupied; strokeC = isSel ? '#fff' : COL.occupied;
+        sub = sN(res.socio_num).split(' ')[0]+' · '+res.comensales+' pers.';
+        cursor = isAdmin() ? 'pointer' : 'not-allowed';
+      }
+      document.getElementById('m'+id+'-bg').setAttribute('fill', fillC);
+      document.getElementById('m'+id+'-bg').setAttribute('stroke', strokeC);
+      document.getElementById('m'+id+'-bg').setAttribute('stroke-width', isSel ? '5' : '3');
+      document.getElementById('m'+id+'-sub').textContent = sub;
+      document.getElementById('mesa-'+id).style.cursor = cursor;
     }
   });
 }
@@ -1149,6 +1229,12 @@ function handleClick(id){
     const res=getRes(id,cTurno,f);
     const libre=!res, esMia=res&&res.socio_num===cu;
     if(libre){
+      // Comprobar bloqueo entre turnos
+      const bloqueo = estadoBloqueo(id, cTurno, f);
+      if(bloqueo === 'bloqueado' && !isAdmin()){
+        showToast('Mesa no disponible para este turno (hay una reserva en otro turno)');
+        return;
+      }
       if(selMesas.includes(id)) selMesas=selMesas.filter(m=>m!==id);
       else{selMesas.push(id);selMesas.sort();}
       updateReservaForm();
@@ -1207,6 +1293,17 @@ function openConfirm(){
   const obs=document.getElementById('f-obs').value;
   const tel=document.getElementById('f-tel').value;
   const mesasLabel=selMesas.length===1?'Mesa '+selMesas[0]:'Mesas '+selMesas.join(' + ');
+  // Avisos por bloqueo entre turnos
+  const f = fmt(cDate);
+  const mesasConAviso = selMesas.filter(m => avisoBloqueo(m, cTurno, f) !== null);
+  let avisoHtml = '';
+  if(mesasConAviso.length > 0){
+    avisoHtml = '<div style="margin-top:.65rem;padding:.6rem .75rem;background:rgba(212,172,13,.12);border:1px solid rgba(212,172,13,.5);border-radius:8px;font-size:.82rem;color:#D4AC0D;line-height:1.5;">'+
+      '⚠️ <strong>Atención:</strong> Hay una merienda reservada en '+
+      (mesasConAviso.length === 1 ? 'la Mesa '+mesasConAviso[0] : 'las Mesas '+mesasConAviso.join(' y '))+
+      '. Debes dejar'+(mesasConAviso.length === 1 ? 'la' : 'las')+' libre'+(mesasConAviso.length === 1 ? '' : 's')+' y recogida'+(mesasConAviso.length === 1 ? '' : 's')+' antes de las 17:00.'+
+      '</div>';
+  }
   document.getElementById('modal-summary').innerHTML=
     '<div class="summary-row"><span>Socio</span><span>'+sN(cu)+'</span></div>'+
     '<div class="summary-row"><span>'+(selMesas.length===1?'Mesa':'Mesas')+'</span><span>'+mesasLabel+'</span></div>'+
@@ -1214,7 +1311,8 @@ function openConfirm(){
     '<div class="summary-row"><span>Turno</span><span>'+TL[cTurno]+'</span></div>'+
     '<div class="summary-row"><span>Comensales</span><span>'+coms+' personas</span></div>'+
     '<div class="summary-row"><span>Teléfono</span><span>'+tel+'</span></div>'+
-    (obs?'<div class="summary-row"><span>Observaciones</span><span>'+obs+'</span></div>':'');
+    (obs?'<div class="summary-row"><span>Observaciones</span><span>'+obs+'</span></div>':'')+
+    avisoHtml;
   document.getElementById('confirm-modal').classList.add('show');
 }
 function closeConfirm(){document.getElementById('confirm-modal').classList.remove('show');}
@@ -1610,9 +1708,24 @@ function renderKioskFloor(){
     const bg=document.getElementById('km'+id+'-bg');
     const sub=document.getElementById('km'+id+'-sub');
     if(!bg)return;
-    bg.setAttribute('fill',libre?FILL.libre:FILL.occupied);
-    bg.setAttribute('stroke',libre?COL.libre:COL.occupied);
-    sub.textContent=libre?'':(sN(res.socio_num).split(' ')[0]+' · '+res.comensales+' pers.');
+    const bloqueo = libre ? estadoBloqueo(id, turno, f) : 'libre';
+    if(libre && bloqueo === 'bloqueado'){
+      bg.setAttribute('fill', FILL.bloqueado);
+      bg.setAttribute('stroke', COL.bloqueado);
+      sub.textContent = '🚫 No disponible';
+    } else if(libre && bloqueo === 'aviso'){
+      bg.setAttribute('fill', FILL.aviso);
+      bg.setAttribute('stroke', COL.aviso);
+      sub.textContent = '⚠️ Libre 17:00';
+    } else if(libre){
+      bg.setAttribute('fill', FILL.libre);
+      bg.setAttribute('stroke', COL.libre);
+      sub.textContent = '';
+    } else {
+      bg.setAttribute('fill', FILL.occupied);
+      bg.setAttribute('stroke', COL.occupied);
+      sub.textContent = sN(res.socio_num).split(' ')[0]+' · '+res.comensales+' pers.';
+    }
   });
 }
 
@@ -1633,12 +1746,23 @@ function renderKioskRight(){
     const rows=[1,2,3,4,5].map(function(id){
       const res=getRes(id,t.key,f);
       const libre=!res;
+      const bloqueo = libre ? estadoBloqueo(id, t.key, f) : 'libre';
       const nombre=id===5?'Mesa Ext.':'Mesa '+id;
-      return '<div class="kiosk-mesa-row '+(libre?'libre':'ocupada')+'">'+
+      let status, info='';
+      if(!libre){
+        status = '<span class="kiosk-mesa-status ocupada">Reservada</span>';
+        info = '<div style="text-align:right">'+status+'<div class="kiosk-mesa-info" style="margin-top:.15rem;">'+res.comensales+' pers.</div></div>';
+      } else if(bloqueo === 'bloqueado'){
+        info = '<span class="kiosk-mesa-status ocupada" style="background:#3a3a3a;color:#ccc;">No disponible</span>';
+      } else if(bloqueo === 'aviso'){
+        info = '<span class="kiosk-mesa-status libre" style="background:rgba(212,172,13,.15);color:#D4AC0D;">⚠️ Libre 17:00</span>';
+      } else {
+        info = '<span class="kiosk-mesa-status libre">Libre</span>';
+      }
+      const cssClass = libre ? (bloqueo === 'bloqueado' ? 'ocupada' : 'libre') : 'ocupada';
+      return '<div class="kiosk-mesa-row '+cssClass+'">'+
         '<div class="kiosk-mesa-name">'+nombre+'</div>'+
-        (libre
-          ?'<span class="kiosk-mesa-status libre">Libre</span>'
-          :'<div style="text-align:right"><span class="kiosk-mesa-status ocupada">Reservada</span><div class="kiosk-mesa-info" style="margin-top:.15rem;">'+res.comensales+' pers.</div></div>')+
+        info+
       '</div>';
     }).join('');
     return '<div class="kiosk-turno-section">'+
