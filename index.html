@@ -1221,6 +1221,12 @@ async function doReserva(){
   document.getElementById('f-tel').value='';
   document.getElementById('f-obs').value='';
   renderFloor();renderStatus();renderCalGrid();
+  // Si estamos en TPV (socio identificado desde el quiosco), volver al inicio
+  if(kioskMode){
+    showToast('✓ '+(numMesas>1?numMesas+' reservas confirmadas':'Reserva confirmada')+'. Volviendo al inicio…');
+    setTimeout(function(){ window.location.href='https://inicio.ccirunes.com'; }, 2500);
+    return;
+  }
   showToast('✓ '+(numMesas>1?numMesas+' reservas confirmadas':'Reserva confirmada'));
 }
 
@@ -2109,6 +2115,12 @@ async function doInscripcionSorteo(sorteo) {
   document.querySelector('.btn-reservar').textContent = 'Confirmar reserva →';
   document.querySelector('.btn-reservar').style.background = '';
   renderFloor(); renderStatus();
+  // Si estamos en TPV (socio identificado desde el quiosco), volver al inicio
+  if(kioskMode){
+    showToast('✓ Inscripción al sorteo guardada. Volviendo al inicio…');
+    setTimeout(function(){ window.location.href='https://inicio.ccirunes.com'; }, 2500);
+    return;
+  }
   showToast('✓ Inscripción al sorteo guardada');
 }
 
