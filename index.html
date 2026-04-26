@@ -848,7 +848,7 @@ const MESES_EXTERIOR=[3,4,5,6,7,8,9]; // abril(3) a octubre(9)
 const FILL={libre:'#2E86C1',occupied:'#B03020',mia:'#E67E22'};
 
 // ── ESTADO ───────────────────────────────────────────
-let cu=null, cDate=new Date(), cTurno='comida', selMesas=[], socioTel='', enModoQuiosco=false;
+let cu=null, cDate=new Date(), cTurno='comida', selMesas=[], socioTel='', enModoQuiosco=false, kioskMode=false;
 let coms=8, adminComs=8, aFilter='todos', editingSocio=null;
 let reservas=[]; // cargadas desde Supabase
 let calViewDate=new Date();
@@ -858,7 +858,7 @@ function getMesasActivas(){
   return [1,2,3,4,5];
 }
 function sN(id){const s=SOCIOS[id];return s?s.nombre+' '+s.apellidos:'';}
-function isAdmin(){return SOCIOS[cu]?.admin;}
+function isAdmin(){return SOCIOS[cu]?.admin || kioskMode;}
 function getRes(m,t,f){return reservas.find(r=>r.mesa===m&&r.turno===t&&r.fecha===f)||null;}
 
 function showLoading(msg='Cargando...'){
@@ -909,7 +909,7 @@ document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key===
 // Auto-kiosk: gestionado en el arranque principal
 
 function doLogout(){
-  cu=null;selMesas=[];coms=8;reservas=[];
+  cu=null; kioskMode=false;selMesas=[];coms=8;reservas=[];
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('app-screen').style.display='none';
   document.getElementById('login-user').value='';
@@ -964,7 +964,7 @@ async function deleteReserva(id){
 // ── FECHA ────────────────────────────────────────────
 function renderDate(){
   const today=new Date();today.setHours(0,0,0,0);
-  const maxD=new Date(today);maxD.setDate(today.getDate()+30);
+  const maxD=new Date(today);maxD.setDate(today.getDate()+60);
   const cd=new Date(cDate);cd.setHours(0,0,0,0);
   document.getElementById('disp-dname').textContent=DIAS[cd.getDay()];
   document.getElementById('disp-dfull').textContent=cd.getDate()+' de '+MESES[cd.getMonth()]+' '+cd.getFullYear();
@@ -973,7 +973,7 @@ function renderDate(){
 }
 function changeDate(dir){
   const today=new Date();today.setHours(0,0,0,0);
-  const maxD=new Date(today);maxD.setDate(today.getDate()+30);
+  const maxD=new Date(today);maxD.setDate(today.getDate()+60);
   const cd=new Date(cDate);cd.setDate(cd.getDate()+dir);
   if(cd<today||cd>maxD)return;
   cDate=cd;selMesas=[];
@@ -996,7 +996,7 @@ function closeCal(){document.getElementById('cal-overlay').classList.remove('sho
 function calNav(dir){calViewDate.setMonth(calViewDate.getMonth()+dir);renderCalGrid();}
 function renderCalGrid(){
   const today=new Date();today.setHours(0,0,0,0);
-  const maxD=new Date(today);maxD.setDate(today.getDate()+30);
+  const maxD=new Date(today);maxD.setDate(today.getDate()+60);
   const sel=fmt(cDate),y=calViewDate.getFullYear(),m=calViewDate.getMonth();
   document.getElementById('cal-month-label').textContent=MESES[m]+' '+y;
   const firstDay=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
@@ -1019,7 +1019,7 @@ function renderCalGrid(){
 }
 function pickCalDay(ds){
   const today=new Date();today.setHours(0,0,0,0);
-  const maxD=new Date(today);maxD.setDate(today.getDate()+30);
+  const maxD=new Date(today);maxD.setDate(today.getDate()+60);
   const d=new Date(ds+'T12:00:00');
   if(d<today||d>maxD)return;
   cDate=d;selMesas=[];
@@ -1038,39 +1038,82 @@ function selTurno(t,el){
 // ── PLANO ────────────────────────────────────────────
 function renderFloor(){
   const f=fmt(cDate);
+  const sorteo=getSorteo(f,cTurno);
   const mesaExt=document.getElementById('mesa-5');
   if(mesaExt) mesaExt.style.display='block';
+
+  // Banner sorteo
+  const oldBanner=document.getElementById('sorteo-plano-banner');
+  if(oldBanner) oldBanner.remove();
+  if(sorteo){
+    const today=new Date();today.setHours(0,0,0,0);
+    const dias=Math.round((new Date(sorteo.fecha+'T12:00:00')-today)/86400000);
+    const abierto=esSorteoAbierto(sorteo);
+    const yaInscrito=inscripciones.some(i=>i.sorteo_id===sorteo.id&&i.socio_num===cu);
+    let bHtml='';
+    if(sorteo.estado==='realizado'){
+      const gane=inscripciones.find(i=>i.sorteo_id===sorteo.id&&i.socio_num===cu&&i.ganador);
+      bHtml=`<div id="sorteo-plano-banner" class="sorteo-banner" style="margin-bottom:.85rem;"><div class="sorteo-banner-icon">${gane?'🏆':'🎲'}</div><div class="sorteo-banner-text"><div class="sorteo-banner-title">${gane?'¡Conseguiste mesa!':'Sorteo realizado'}</div><div class="sorteo-banner-sub">${gane?'Tu reserva está confirmada':'No resultaste seleccionado'}</div></div></div>`;
+    } else if(abierto){
+      bHtml=`<div id="sorteo-plano-banner" class="sorteo-banner" style="margin-bottom:.85rem;"><div class="sorteo-banner-icon">🎲</div><div class="sorteo-banner-text"><div class="sorteo-banner-title">Día de fiesta · Sorteo${sorteo.descripcion?' — '+sorteo.descripcion:''}</div><div class="sorteo-banner-sub">${yaInscrito?'✓ Ya estás inscrito':'Selecciona mesa/s e inscríbete. Sorteo en '+dias+' días.'}</div></div></div>`;
+    } else if(dias>20){
+      bHtml=`<div id="sorteo-plano-banner" class="sorteo-banner" style="margin-bottom:.85rem;background:linear-gradient(135deg,#555,#333)"><div class="sorteo-banner-icon">📅</div><div class="sorteo-banner-text"><div class="sorteo-banner-title">Día de fiesta${sorteo.descripcion?' — '+sorteo.descripcion:''}</div><div class="sorteo-banner-sub">Inscripciones abren en ${dias-45} días</div></div></div>`;
+    }
+    if(bHtml) document.getElementById('status-panel').insertAdjacentHTML('beforebegin',bHtml);
+  }
+
   getMesasActivas().forEach(id=>{
     const res=getRes(id,cTurno,f);
-    const libre=!res,esMia=res&&res.socio_num===cu;
+    const libre=!res, esMia=res&&res.socio_num===cu;
     const isSel=selMesas.includes(id);
-    document.getElementById('m'+id+'-bg').setAttribute('fill',libre?FILL.libre:esMia?FILL.mia:FILL.occupied);
-    document.getElementById('m'+id+'-bg').setAttribute('stroke',isSel?'#fff':libre?COL.libre:esMia?COL.mia:COL.occupied);
-    document.getElementById('m'+id+'-bg').setAttribute('stroke-width',isSel?'5':'3');
-    const sub=document.getElementById('m'+id+'-sub');
-    sub.textContent=libre?(isSel?'✓ Seleccionada':''):(esMia?'✓ Tu reserva':sN(res.socio_num).split(' ')[0]+' · '+res.comensales+' pers.');
-    document.getElementById('mesa-'+id).style.cursor=libre||isAdmin()?'pointer':'not-allowed';
+    const sorteoActivo=sorteo&&sorteo.estado!=='realizado'&&esSorteoAbierto(sorteo);
+
+    if(sorteoActivo&&!isAdmin()){
+      const inscrip=inscripciones.filter(i=>i.sorteo_id===sorteo.id&&Array.isArray(i.mesas)&&i.mesas.includes(id));
+      const miIns=inscrip.find(i=>i.socio_num===cu);
+      const fill=miIns?FILL_SORTEO_MIO:inscrip.length?FILL_SORTEO:FILL.libre;
+      document.getElementById('m'+id+'-bg').setAttribute('fill',fill);
+      document.getElementById('m'+id+'-bg').setAttribute('stroke',isSel?'#fff':fill);
+      document.getElementById('m'+id+'-bg').setAttribute('stroke-width',isSel?'5':'3');
+      document.getElementById('m'+id+'-sub').textContent=miIns?'✓ Tu inscripción':inscrip.length?inscrip.length+' inscrito'+(inscrip.length>1?'s':''):(isSel?'✓ Seleccionada':'');
+      document.getElementById('mesa-'+id).style.cursor='pointer';
+    } else {
+      document.getElementById('m'+id+'-bg').setAttribute('fill',libre?FILL.libre:esMia?FILL.mia:FILL.occupied);
+      document.getElementById('m'+id+'-bg').setAttribute('stroke',isSel?'#fff':libre?COL.libre:esMia?COL.mia:COL.occupied);
+      document.getElementById('m'+id+'-bg').setAttribute('stroke-width',isSel?'5':'3');
+      document.getElementById('m'+id+'-sub').textContent=libre?(isSel?'✓ Seleccionada':''):(esMia?'✓ Tu reserva':sN(res.socio_num).split(' ')[0]+' · '+res.comensales+' pers.');
+      document.getElementById('mesa-'+id).style.cursor=libre||isAdmin()?'pointer':'not-allowed';
+    }
   });
 }
 
 function handleClick(id){
-  const f=fmt(cDate),res=getRes(id,cTurno,f);
-  const libre=!res,esMia=res&&res.socio_num===cu;
-  if(libre){
-    if(selMesas.includes(id)){
-      // Deselect
-      selMesas=selMesas.filter(m=>m!==id);
-    } else {
-      // Select
-      selMesas.push(id);
-      selMesas.sort();
-    }
-    updateReservaForm();
+  const f=fmt(cDate);
+  const sorteo=getSorteo(f,cTurno);
+  const sorteoActivo=sorteo&&sorteo.estado!=='realizado'&&esSorteoAbierto(sorteo);
+
+  if(sorteoActivo&&!isAdmin()){
+    // Modo sorteo: inscribirse
+    const misInscrip=inscripciones.filter(i=>i.sorteo_id===sorteo.id&&i.socio_num===cu);
+    if(misInscrip.length>0){showToast('Ya estás inscrito en este sorteo');return;}
+    if(selMesas.includes(id)) selMesas=selMesas.filter(m=>m!==id);
+    else{selMesas.push(id);selMesas.sort();}
+    updateReservaFormSorteo(sorteo);
     renderFloor();
-  } else if(esMia){showToast('Ya tienes esta mesa reservada');}
-  else if(isAdmin()){
-    if(confirm('¿Cancelar reserva de '+sN(res.socio_num)+' en Mesa '+id+'?')) adminCancelDirect(res);
-  } else {showToast('Mesa ocupada');}
+  } else {
+    // Modo normal
+    const res=getRes(id,cTurno,f);
+    const libre=!res, esMia=res&&res.socio_num===cu;
+    if(libre){
+      if(selMesas.includes(id)) selMesas=selMesas.filter(m=>m!==id);
+      else{selMesas.push(id);selMesas.sort();}
+      updateReservaForm();
+      renderFloor();
+    } else if(esMia){showToast('Ya tienes esta mesa reservada');}
+    else if(isAdmin()){
+      if(confirm('¿Cancelar reserva de '+sN(res.socio_num)+' en Mesa '+id+'?')) adminCancelDirect(res);
+    } else {showToast('Mesa ocupada');}
+  }
 }
 
 function updateReservaForm(){
@@ -1108,6 +1151,11 @@ function renderStatus(){
 
 // ── CONFIRMAR RESERVA ────────────────────────────────
 function openConfirm(){
+  const sorteo=getSorteo(fmt(cDate),cTurno);
+  const sorteoActivo=sorteo&&sorteo.estado!=='realizado'&&esSorteoAbierto(sorteo);
+  if(sorteoActivo&&!isAdmin()){openConfirmSorteo(sorteo);return;}
+  document.querySelector('.btn-reservar').textContent='Confirmar reserva →';
+  document.querySelector('.btn-reservar').style.background='';
   if(selMesas.length===0)return;
   if(!document.getElementById('f-tel').value.trim()){showToast('Introduce un teléfono de contacto');return;}
   const cd=new Date(cDate);
@@ -1117,7 +1165,7 @@ function openConfirm(){
   const mesasLabel=selMesas.length===1?'Mesa '+selMesas[0]:'Mesas '+selMesas.join(' + ');
   document.getElementById('modal-summary').innerHTML=
     '<div class="summary-row"><span>Socio</span><span>'+sN(cu)+'</span></div>'+
-    '<div class="summary-row"><span>'+( selMesas.length===1?'Mesa':'Mesas')+'</span><span>'+mesasLabel+'</span></div>'+
+    '<div class="summary-row"><span>'+(selMesas.length===1?'Mesa':'Mesas')+'</span><span>'+mesasLabel+'</span></div>'+
     '<div class="summary-row"><span>Fecha</span><span>'+fStr+'</span></div>'+
     '<div class="summary-row"><span>Turno</span><span>'+TL[cTurno]+'</span></div>'+
     '<div class="summary-row"><span>Comensales</span><span>'+coms+' personas</span></div>'+
@@ -1186,17 +1234,32 @@ function renderMisReservas(){
   const today=fmt(new Date());
   const TURNO_ORDER=['comida','merienda','cena'];
   const sortFn=(a,b)=>a[0].fecha.localeCompare(b[0].fecha)||TURNO_ORDER.indexOf(a[0].turno)-TURNO_ORDER.indexOf(b[0].turno);
-
-  // Próximas
   const proximas=reservas.filter(r=>r.socio_num===cu&&r.fecha>=today).sort((a,b)=>a.fecha.localeCompare(b.fecha)||TURNO_ORDER.indexOf(a.turno)-TURNO_ORDER.indexOf(b.turno));
   const list=document.getElementById('mis-reservas-list');
   if(!proximas.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">📅</div><p>No tienes reservas próximas.</p></div>';}
-  else {
-    const groups=groupReservas(proximas).sort(sortFn);
-    list.innerHTML=groups.map(g=>buildReservaGroupHTML(g,true)).join('');
+  else{const groups=groupReservas(proximas).sort(sortFn);list.innerHTML=groups.map(g=>buildReservaGroupHTML(g,true)).join('');}
+
+  // Inscripciones a sorteos
+  const mias=(typeof inscripciones!=='undefined')?inscripciones.filter(i=>i.socio_num===cu):[];
+  if(mias.length){
+    let html='<div class="section-title" style="margin-top:.75rem;margin-bottom:.5rem;">Inscripciones a sorteos</div>';
+    mias.forEach(i=>{
+      const s=(typeof sorteos!=='undefined')?sorteos.find(x=>x.id===i.sorteo_id):null;if(!s)return;
+      const d=new Date(s.fecha+'T12:00:00');
+      const ml=i.mesas.length===1?'Mesa '+i.mesas[0]:'Mesas '+i.mesas.join(' + ');
+      const est=s.estado==='realizado'?(i.ganador?'<span style="color:#27AE60;font-weight:600">✓ Seleccionado</span>':'<span style="color:#C0392B">No seleccionado</span>'):'<span class="sorteo-badge">⏳ Pendiente de sorteo</span>';
+      html+='<div class="reserva-item" style="border-color:rgba(123,45,139,.25)">'+
+        '<div class="reserva-date-box" style="background:#7B2D8B"><div class="rday">'+d.getDate()+'</div><div class="rmonth">'+MESES_C[d.getMonth()]+'</div></div>'+
+        '<div class="reserva-info"><div class="mesa-name">🎲 '+ml+'</div>'+
+        '<div class="reserva-meta">'+i.comensales+' comensales · <span class="reserva-turno">'+TL[s.turno]+'</span></div>'+
+        (s.descripcion?'<div class="reserva-meta">🎉 '+s.descripcion+'</div>':'')+
+        '<div class="reserva-meta" style="margin-top:.25rem;">'+est+'</div></div>'+
+        (s.estado!=='realizado'?'<button class="btn-cancelar" onclick="cancelarInscripcion(\''+i.id+'\')">Cancelar</button>':'')+
+        '</div>';
+    });
+    list.insertAdjacentHTML('beforeend',html);
   }
 
-  // Pasadas
   const pasadas=reservas.filter(r=>r.socio_num===cu&&r.fecha<today).sort((a,b)=>b.fecha.localeCompare(a.fecha)||TURNO_ORDER.indexOf(a.turno)-TURNO_ORDER.indexOf(b.turno));
   const pasadasSection=document.getElementById('mis-reservas-pasadas-section');
   const pasadasList=document.getElementById('mis-reservas-pasadas-list');
@@ -1204,9 +1267,7 @@ function renderMisReservas(){
     pasadasSection.style.display='block';
     const groups=groupReservas(pasadas).sort((a,b)=>b[0].fecha.localeCompare(a[0].fecha));
     pasadasList.innerHTML=groups.map(g=>buildReservaGroupHTML(g,false)).join('');
-  } else {
-    pasadasSection.style.display='none';
-  }
+  } else {pasadasSection.style.display='none';}
 }
 
 function togglePasadas(){
@@ -1284,7 +1345,7 @@ async function adminCancelDirect(res){
 function openAdminCreate(){
   document.getElementById('ac-socio').innerHTML=Object.entries(SOCIOS).filter(([k,v])=>!v.admin).sort((a,b)=>parseInt(a[0])-parseInt(b[0])).map(([k,v])=>'<option value="'+k+'">'+v.nombre+' '+v.apellidos+' (nº '+parseInt(k)+')</option>').join('');
   const today=new Date();today.setHours(0,0,0,0);
-  const maxD=new Date(today);maxD.setDate(today.getDate()+30);
+  const maxD=new Date(today);maxD.setDate(today.getDate()+60);
   const inp=document.getElementById('ac-fecha');
   inp.min=fmt(today);inp.max=fmt(maxD);inp.value=fmt(today);
   adminComs=8;document.getElementById('ac-coms').textContent=8;
@@ -1460,7 +1521,7 @@ function startKioskRealtime(){
 
 function changeKioskDate(dir){
   const today=new Date();today.setHours(0,0,0,0);
-  const maxD=new Date(today);maxD.setDate(today.getDate()+30);
+  const maxD=new Date(today);maxD.setDate(today.getDate()+60);
   const nd=new Date(kioskDate);nd.setDate(nd.getDate()+dir);
   nd.setHours(0,0,0,0);
   if(nd<today||nd>maxD)return;
@@ -1546,10 +1607,11 @@ function doKioskLogin(){
   const u=document.getElementById('kiosk-user').value.trim().padStart(3,'0');
   const p=document.getElementById('kiosk-pass').value.trim().replace(/[^0-9]/g,'');
   const s=SOCIOS[u];
-  if(!s||s.dni.replace(/[^0-9]/g,'')!==p){
+  if(!s||(s.dni||'').replace(/[^0-9]/g,'')!==p){
     document.getElementById('kiosk-error').style.display='block';return;
   }
   closeKioskLogin();
+  kioskMode=true;
   // Save admin session
   const prevCu=cu;
   const prevReservas=reservas.slice();
@@ -1594,6 +1656,7 @@ function doKioskLogin(){
   backBtn.style.cssText='position:fixed;bottom:1.5rem;right:1.5rem;left:auto;transform:none;background:#1A3A6B;color:#DDEEFF;border:2px solid rgba(74,127,212,.6);border-radius:14px;padding:1rem 2.2rem;font-family:DM Sans,sans-serif;font-size:1.1rem;font-weight:600;cursor:pointer;z-index:99;box-shadow:0 4px 20px rgba(0,0,0,.4);';
   backBtn.onclick=function(){
     backBtn.remove();
+    kioskMode=false;
     // Restore admin session
     cu=prevCu;
     reservas=prevReservas;
@@ -1626,7 +1689,7 @@ function kioskSelTurno(turno, btn){
 
 function renderKioskInlineCal(){
   const today=new Date();today.setHours(0,0,0,0);
-  const maxD=new Date(today);maxD.setDate(today.getDate()+30);
+  const maxD=new Date(today);maxD.setDate(today.getDate()+60);
   const sel=fmt(kioskDate);
   const y=kioskInlineCalView.getFullYear(), m=kioskInlineCalView.getMonth();
   document.getElementById('kiosk-inline-month').textContent=MESES[m]+' '+y;
@@ -1656,7 +1719,7 @@ function kioskInlineCalNav(dir){
 
 function pickKioskInlineDay(ds){
   const today=new Date();today.setHours(0,0,0,0);
-  const maxD=new Date(today);maxD.setDate(today.getDate()+30);
+  const maxD=new Date(today);maxD.setDate(today.getDate()+60);
   const d=new Date(ds+'T12:00:00');
   if(d<today||d>maxD)return;
   kioskDate=d;
@@ -1681,7 +1744,7 @@ function kioskCalNav(dir){
 }
 function renderKioskCalGrid(){
   const today=new Date();today.setHours(0,0,0,0);
-  const maxD=new Date(today);maxD.setDate(today.getDate()+30);
+  const maxD=new Date(today);maxD.setDate(today.getDate()+60);
   const sel=fmt(kioskDate);
   const y=kioskCalView.getFullYear(),m=kioskCalView.getMonth();
   document.getElementById('kiosk-cal-month').textContent=MESES[m]+' '+y;
@@ -1705,7 +1768,7 @@ function renderKioskCalGrid(){
 }
 function pickKioskCalDay(ds){
   const today=new Date();today.setHours(0,0,0,0);
-  const maxD=new Date(today);maxD.setDate(today.getDate()+30);
+  const maxD=new Date(today);maxD.setDate(today.getDate()+60);
   const d=new Date(ds+'T12:00:00');
   if(d<today||d>maxD)return;
   kioskDate=d;
@@ -1928,128 +1991,20 @@ function getSorteoActivo(fecha, turno) {
 function getSorteo(fecha, turno) {
   return sorteos.find(s => s.fecha === fecha && s.turno === turno) || null;
 }
+function esSorteoAbierto(s){
+  const today=new Date();today.setHours(0,0,0,0);
+  const dias=Math.round((new Date(s.fecha+'T12:00:00')-today)/86400000);
+  return dias<=45&&dias>20&&s.estado!=='realizado';
+}
 
 // ── Renderizar plano con conciencia de sorteo ────────
 // Sobreescribe renderFloor para añadir lógica sorteo
 const _renderFloorOrig = renderFloor;
-function renderFloor() {
-  const f = fmt(cDate);
-  const sorteo = getSorteo(f, cTurno);
-  const mesaExt = document.getElementById('mesa-5');
-  if (mesaExt) mesaExt.style.display = 'block';
 
-  // Banner de sorteo activo
-  const existingBanner = document.getElementById('sorteo-plano-banner');
-  if (existingBanner) existingBanner.remove();
-
-  if (sorteo) {
-    const today = new Date(); today.setHours(0,0,0,0);
-    const fEvento = new Date(sorteo.fecha + 'T12:00:00');
-    const dias = Math.round((fEvento - today) / 86400000);
-    const estaAbierto = dias <= 45 && dias > 20 && sorteo.estado !== 'realizado';
-    const misInscrip = inscripciones.filter(i => i.sorteo_id === sorteo.id && i.socio_num === cu);
-    const yaInscrito = misInscrip.length > 0;
-
-    let bannerHtml = '';
-    if (sorteo.estado === 'realizado') {
-      const gane = inscripciones.find(i => i.sorteo_id === sorteo.id && i.socio_num === cu && i.ganador);
-      bannerHtml = `<div id="sorteo-plano-banner" class="sorteo-banner" style="margin-bottom:.85rem;">
-        <div class="sorteo-banner-icon">${gane ? '🏆' : '🎲'}</div>
-        <div class="sorteo-banner-text">
-          <div class="sorteo-banner-title">${gane ? '¡Conseguiste mesa!' : 'Sorteo realizado'}</div>
-          <div class="sorteo-banner-sub">${gane ? 'Tu reserva está confirmada' : 'No resultaste seleccionado en el sorteo'}</div>
-        </div>
-      </div>`;
-    } else if (estaAbierto) {
-      bannerHtml = `<div id="sorteo-plano-banner" class="sorteo-banner" style="margin-bottom:.85rem;">
-        <div class="sorteo-banner-icon">🎲</div>
-        <div class="sorteo-banner-text">
-          <div class="sorteo-banner-title">Día de fiesta · Sorteo${sorteo.descripcion?' — '+sorteo.descripcion:''}</div>
-          <div class="sorteo-banner-sub">${yaInscrito ? '✓ Ya estás inscrito al sorteo' : 'Inscríbete para participar en el sorteo. El resultado se publicará en '+dias+' días.'}</div>
-        </div>
-      </div>`;
-    } else if (dias > 20) {
-      bannerHtml = `<div id="sorteo-plano-banner" class="sorteo-banner" style="margin-bottom:.85rem;background:linear-gradient(135deg,#555,#333);">
-        <div class="sorteo-banner-icon">📅</div>
-        <div class="sorteo-banner-text">
-          <div class="sorteo-banner-title">Día de fiesta${sorteo.descripcion?' — '+sorteo.descripcion:''}</div>
-          <div class="sorteo-banner-sub">Las inscripciones se abrirán en ${dias - 45} días</div>
-        </div>
-      </div>`;
-    }
-
-    if (bannerHtml) {
-      const statusPanel = document.getElementById('status-panel');
-      statusPanel.insertAdjacentHTML('beforebegin', bannerHtml);
-    }
-  }
-
-  getMesasActivas().forEach(id => {
-    const res = getRes(id, cTurno, f);
-    const isSel = selMesas.includes(id);
-
-    if (sorteo && sorteo.estado !== 'realizado') {
-      // Modo sorteo: mostrar inscripciones, no reservas normales
-      const today2 = new Date(); today2.setHours(0,0,0,0);
-      const fEvento2 = new Date(sorteo.fecha + 'T12:00:00');
-      const dias2 = Math.round((fEvento2 - today2) / 86400000);
-      const estaAbierto2 = dias2 <= 45 && dias2 > 20;
-
-      const inscrip = inscripciones.filter(i => i.sorteo_id === sorteo.id && i.mesas && i.mesas.includes(id));
-      const miInscrip = inscrip.find(i => i.socio_num === cu);
-      const hayInscrip = inscrip.length > 0;
-
-      let fillColor = FILL.libre;
-      if (miInscrip) fillColor = FILL_SORTEO_MIO;
-      else if (hayInscrip) fillColor = FILL_SORTEO;
-
-      document.getElementById('m'+id+'-bg').setAttribute('fill', fillColor);
-      document.getElementById('m'+id+'-bg').setAttribute('stroke', isSel ? '#fff' : fillColor);
-      document.getElementById('m'+id+'-bg').setAttribute('stroke-width', isSel ? '5' : '3');
-      const sub = document.getElementById('m'+id+'-sub');
-      sub.textContent = miInscrip ? '✓ Tu inscripción' : hayInscrip ? inscrip.length+' inscrito'+(inscrip.length>1?'s':'') : (isSel ? '✓ Seleccionada' : '');
-      document.getElementById('mesa-'+id).style.cursor = estaAbierto2 ? 'pointer' : 'default';
-    } else {
-      // Modo normal
-      const libre = !res, esMia = res && res.socio_num === cu;
-      document.getElementById('m'+id+'-bg').setAttribute('fill', libre ? FILL.libre : esMia ? FILL.mia : FILL.occupied);
-      document.getElementById('m'+id+'-bg').setAttribute('stroke', isSel ? '#fff' : libre ? COL.libre : esMia ? COL.mia : COL.occupied);
-      document.getElementById('m'+id+'-bg').setAttribute('stroke-width', isSel ? '5' : '3');
-      const sub = document.getElementById('m'+id+'-sub');
-      sub.textContent = libre ? (isSel ? '✓ Seleccionada' : '') : (esMia ? '✓ Tu reserva' : sN(res.socio_num).split(' ')[0] + ' · ' + res.comensales + ' pers.');
-      document.getElementById('mesa-'+id).style.cursor = libre || isAdmin() ? 'pointer' : 'not-allowed';
-    }
-  });
-}
 
 // ── Click en mesa con conciencia de sorteo ───────────
 const _handleClickOrig = handleClick;
-function handleClick(id) {
-  const f = fmt(cDate);
-  const sorteo = getSorteo(f, cTurno);
 
-  if (sorteo && sorteo.estado !== 'realizado') {
-    const today = new Date(); today.setHours(0,0,0,0);
-    const fEvento = new Date(sorteo.fecha + 'T12:00:00');
-    const dias = Math.round((fEvento - today) / 86400000);
-    const estaAbierto = dias <= 45 && dias > 20;
-    if (!estaAbierto) return;
-
-    // En modo sorteo: seleccionar mesas para inscripción
-    const misInscrip = inscripciones.filter(i => i.sorteo_id === sorteo.id && i.socio_num === cu);
-    if (misInscrip.length > 0) { showToast('Ya estás inscrito en este sorteo'); return; }
-
-    if (selMesas.includes(id)) {
-      selMesas = selMesas.filter(m => m !== id);
-    } else {
-      selMesas.push(id); selMesas.sort();
-    }
-    updateReservaFormSorteo(sorteo);
-    renderFloor();
-  } else {
-    _handleClickOrig(id);
-  }
-}
 
 // Formulario de reserva adaptado para sorteo
 function updateReservaFormSorteo(sorteo) {
@@ -2074,18 +2029,7 @@ function updateReservaFormSorteo(sorteo) {
 
 // Sobreescribir openConfirm para modo sorteo
 const _openConfirmOrig = openConfirm;
-function openConfirm() {
-  const f = fmt(cDate);
-  const sorteo = getSorteo(f, cTurno);
-  if (sorteo && sorteo.estado !== 'realizado') {
-    openConfirmSorteo(sorteo);
-    return;
-  }
-  // Restaurar botón por si acaso
-  document.querySelector('.btn-reservar').textContent = 'Confirmar reserva →';
-  document.querySelector('.btn-reservar').style.background = '';
-  _openConfirmOrig();
-}
+
 
 function openConfirmSorteo(sorteo) {
   if (selMesas.length === 0) return;
@@ -2139,34 +2083,7 @@ async function doInscripcionSorteo(sorteo) {
 
 // ── Mis reservas: incluir inscripciones pendientes ───
 const _renderMisReservasOrig = renderMisReservas;
-function renderMisReservas() {
-  _renderMisReservasOrig();
-  // Añadir inscripciones pendientes al principio
-  const misInscrip = inscripciones.filter(i => i.socio_num === cu);
-  if (!misInscrip.length) return;
-  const list = document.getElementById('mis-reservas-list');
-  let html = '<div class="section-title" style="margin-bottom:.5rem;">Inscripciones a sorteos</div>';
-  misInscrip.forEach(i => {
-    const sorteo = sorteos.find(s => s.id === i.sorteo_id);
-    if (!sorteo) return;
-    const d = new Date(sorteo.fecha + 'T12:00:00');
-    const mesasLabel = i.mesas.length === 1 ? 'Mesa ' + i.mesas[0] : 'Mesas ' + i.mesas.join(' + ');
-    const estado = sorteo.estado === 'realizado'
-      ? (i.ganador ? '<span style="color:#27AE60;font-weight:600">✓ Seleccionado</span>' : '<span style="color:#C0392B">No seleccionado</span>')
-      : '<span class="sorteo-badge">⏳ Pendiente de sorteo</span>';
-    html += '<div class="reserva-item" style="border-color:rgba(123,45,139,.25)">' +
-      '<div class="reserva-date-box" style="background:#7B2D8B;"><div class="rday">' + d.getDate() + '</div><div class="rmonth">' + MESES_C[d.getMonth()] + '</div></div>' +
-      '<div class="reserva-info">' +
-      '<div class="mesa-name">🎲 ' + mesasLabel + '</div>' +
-      '<div class="reserva-meta">' + i.comensales + ' comensales · <span class="reserva-turno">' + TL[sorteo.turno] + '</span></div>' +
-      (sorteo.descripcion ? '<div class="reserva-meta">🎉 ' + sorteo.descripcion + '</div>' : '') +
-      '<div class="reserva-meta" style="margin-top:.25rem;">' + estado + '</div>' +
-      '</div>' +
-      (sorteo.estado !== 'realizado' ? '<button class="btn-cancelar" onclick="cancelarInscripcion(\'' + i.id + '\')">Cancelar</button>' : '') +
-      '</div>';
-  });
-  list.insertAdjacentHTML('afterbegin', html);
-}
+
 
 async function cancelarInscripcion(id) {
   if (!confirm('¿Cancelar tu inscripción al sorteo?')) return;
