@@ -435,7 +435,7 @@
         <input type="text" id="login-user" placeholder="Ej: 042" autocomplete="off" inputmode="numeric">
       </div>
       <div class="field-group">
-        <label>DNI (sin letra)</label>
+        <label>DNI sin letra</label>
         <input type="tel" id="login-pass" placeholder="Ej: 12345678" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
         <div class="error-msg" id="login-error">Número de socio o DNI incorrecto</div>
       </div>
@@ -791,7 +791,7 @@
     <h3>Identificación</h3>
     <p>Introduce tu número de socio y DNI para hacer una reserva</p>
     <div class="kiosk-field"><label>Número de socio</label><input type="text" id="kiosk-user" placeholder="Ej: 042" inputmode="numeric" autocomplete="off"></div>
-    <div class="kiosk-field"><label>DNI (sin letra)</label><input type="tel" id="kiosk-pass" placeholder="Ej: 12345678" autocomplete="off" inputmode="numeric" pattern="[0-9]*"></div>
+    <div class="kiosk-field"><label>DNI sin letra</label><input type="tel" id="kiosk-pass" placeholder="Ej: 12345678" autocomplete="off" inputmode="numeric" pattern="[0-9]*"></div>
     <div class="kiosk-login-error" id="kiosk-error">Número de socio o DNI incorrecto</div>
     <button class="kiosk-login-btn" onclick="doKioskLogin()">Entrar →</button>
     <button class="kiosk-login-cancel" onclick="closeKioskLogin()">Cancelar</button>
@@ -2007,7 +2007,7 @@ function _paintNotas(mias,list){
   let html='';
   mias.forEach(function(n,idx){
     const d=new Date(n.created_at);
-    const fechaStr=d.toLocaleDateString('es-ES')+' '+d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    const fechaStr=d.toLocaleDateString('es-ES',{timeZone:'Europe/Madrid'})+' '+d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Madrid'});
     const lineas=JSON.parse(n.lineas||'[]');
     let detalleHtml='';
     lineas.forEach(function(l){
