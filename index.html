@@ -1594,10 +1594,10 @@ async function saveSocio(){
   const smTel=document.getElementById('sm-tel').value.replace(/\s/g,'');
   const tel=(smTel&&(smTel.startsWith('6')||smTel.startsWith('7')))?smTel:'';
   // Preservar el flag admin al editar (solo se asigna false en altas nuevas)
-  const adminFlag = editingSocio ? (SOCIOS[num]?.admin || false) : false;
-  // Guardar en Supabase
+  const adminFlag = editingSocio ? (SOCIOS[editingSocio]?.admin || false) : false;
+  // Guardar en Supabase (socio_num como entero para coincidir con el tipo de la tabla)
   const {error}=await sb.from('socios').upsert({
-    socio_num:num, dni, nombre, apellidos,
+    socio_num:parseInt(num,10), dni, nombre, apellidos,
     initials:initials.slice(0,2)||'??',
     tel:tel||null, admin:adminFlag
   },{onConflict:'socio_num'});
