@@ -82,6 +82,7 @@
   .cal-day.empty{pointer-events:none;}
   .cal-day.has-res{position:relative;}
   .cal-day.has-res::after{content:'';width:4px;height:4px;border-radius:50%;background:var(--gold);position:absolute;bottom:3px;left:50%;transform:translateX(-50%);}
+.cal-day.has-sorteo{border-color:rgba(123,45,139,.6);color:#c084fc;}
 
   /* FLOOR */
   .floor-wrap{border-radius:12px;overflow:hidden;margin-bottom:.75rem;}
@@ -934,18 +935,28 @@ function getSorteoDia(fecha){
 function getMaxFecha(forceAdmin){
   const today=new Date();today.setHours(0,0,0,0);
   const esAdminReal = !!(SOCIOS[cu]?.admin) || !!forceAdmin;
-  // Base: 60 si admin, 30 si no
   const baseDias = esAdminReal ? 60 : 30;
-  let maxD = new Date(today); maxD.setDate(today.getDate()+baseDias);
-  // Extender hasta cualquier sorteo no realizado, sin restricción de ventana
-  if(!esAdminReal && typeof sorteos !== 'undefined' && Array.isArray(sorteos)){
-    sorteos.forEach(function(s){
-      if(s.estado==='realizado') return;
-      const fEvento = new Date(s.fecha+'T12:00:00'); fEvento.setHours(0,0,0,0);
-      if(fEvento>maxD) maxD = new Date(fEvento);
-    });
-  }
+  const maxD = new Date(today); maxD.setDate(today.getDate()+baseDias);
   return maxD;
+}
+
+// Devuelve true si esa fecha tiene un sorteo abierto (no realizado).
+// Permite al socio normal ver ese día concreto en el calendario aunque
+// esté fuera del límite de 30 días, pero sin habilitar los días intermedios.
+function esFechaSorteoAbierto(fechaStr){
+  if(typeof sorteos === 'undefined' || !Array.isArray(sorteos)) return false;
+  return sorteos.some(s => s.fecha === fechaStr && s.estado !== 'realizado');
+}
+
+// Devuelve true si el usuario puede acceder a esta fecha:
+// - Dentro del límite normal (hoy+30 socios / hoy+60 admin), O
+// - Es exactamente el día de un sorteo no realizado
+function esFechaAccesible(ds){
+  const today=new Date();today.setHours(0,0,0,0);
+  const dt=new Date(ds+'T12:00:00');dt.setHours(0,0,0,0);
+  if(dt<today) return false;
+  if(dt<=getMaxFecha()) return true;
+  return esFechaSorteoAbierto(ds);
 }
 
 function showLoading(msg='Cargando...'){
@@ -1053,16 +1064,20 @@ function renderDate(){
   const today=new Date();today.setHours(0,0,0,0);
   const maxD=getMaxFecha();
   const cd=new Date(cDate);cd.setHours(0,0,0,0);
+  const siguiente=new Date(cd);siguiente.setDate(cd.getDate()+1);
+  const siguienteEsSorteo = !isAdmin() && esFechaSorteoAbierto(fmt(siguiente));
   document.getElementById('disp-dname').textContent=DIAS[cd.getDay()];
   document.getElementById('disp-dfull').textContent=cd.getDate()+' de '+MESES[cd.getMonth()]+' '+cd.getFullYear();
   document.getElementById('btn-prev').disabled=cd<=today;
-  document.getElementById('btn-next').disabled=cd>=maxD;
+  document.getElementById('btn-next').disabled=cd>=maxD&&!siguienteEsSorteo;
 }
 function changeDate(dir){
   const today=new Date();today.setHours(0,0,0,0);
   const maxD=getMaxFecha();
-  const cd=new Date(cDate);cd.setDate(cd.getDate()+dir);
-  if(cd<today||cd>maxD)return;
+  const cd=new Date(cDate);cd.setDate(cd.getDate()+dir);cd.setHours(0,0,0,0);
+  const ds=fmt(cd);
+  const esSorteo = !isAdmin() && esFechaSorteoAbierto(ds);
+  if(cd<today||(cd>maxD&&!esSorteo))return;
   cDate=cd;selMesas=[];
   document.getElementById('reserva-form').classList.remove('visible');
   renderDate();renderFloor();renderStatus();
@@ -1096,9 +1111,12 @@ function renderCalGrid(){
     const ds=fmt(dt);
     const isToday=dt.getTime()===today.getTime();
     const isSel=ds===sel;
-    const disabled=dt<today||dt>maxD;
+    // Un día está habilitado si: está dentro del límite normal O es día de sorteo abierto
+    const esSorteo = !isAdmin() && esFechaSorteoAbierto(ds);
+    const disabled=dt<today||(dt>maxD&&!esSorteo);
     const hasRes=reservas.some(r=>r.fecha===ds&&r.socio_num===cu);
-    let cls='cal-day'+(isToday?' today':'')+(isSel?' selected':'')+(disabled?' disabled':'')+(hasRes&&!disabled?' has-res':'');
+    const hasSorteo=esSorteo&&!disabled;
+    let cls='cal-day'+(isToday?' today':'')+(isSel?' selected':'')+(disabled?' disabled':'')+(hasRes&&!disabled?' has-res':'')+(hasSorteo?' has-sorteo':'');
     const dayEl = '<div class="'+cls+'" data-date="'+ds+'" onclick="pickCalDay(this.dataset.date)">'+d+'</div>';
     html+=dayEl;
   }
@@ -1108,7 +1126,8 @@ function pickCalDay(ds){
   const today=new Date();today.setHours(0,0,0,0);
   const maxD=getMaxFecha();
   const d=new Date(ds+'T12:00:00');
-  if(d<today||d>maxD)return;
+  const esSorteo = !isAdmin() && esFechaSorteoAbierto(ds);
+  if(d<today||(d>maxD&&!esSorteo))return;
   cDate=d;selMesas=[];
   document.getElementById('reserva-form').classList.remove('visible');
   renderDate();renderFloor();renderStatus();closeCal();
@@ -1594,10 +1613,10 @@ async function saveSocio(){
   const smTel=document.getElementById('sm-tel').value.replace(/\s/g,'');
   const tel=(smTel&&(smTel.startsWith('6')||smTel.startsWith('7')))?smTel:'';
   // Preservar el flag admin al editar (solo se asigna false en altas nuevas)
-  const adminFlag = editingSocio ? (SOCIOS[editingSocio]?.admin || false) : false;
-  // Guardar en Supabase (socio_num como entero para coincidir con el tipo de la tabla)
+  const adminFlag = editingSocio ? (SOCIOS[num]?.admin || false) : false;
+  // Guardar en Supabase
   const {error}=await sb.from('socios').upsert({
-    socio_num:parseInt(num,10), dni, nombre, apellidos,
+    socio_num:num, dni, nombre, apellidos,
     initials:initials.slice(0,2)||'??',
     tel:tel||null, admin:adminFlag
   },{onConflict:'socio_num'});
