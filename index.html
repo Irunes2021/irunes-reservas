@@ -623,10 +623,11 @@
 
   <!-- SOCIOS -->
   <div id="tab-socios" class="content" style="display:none">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem;">
-      <div class="section-title" style="margin-bottom:0">Gestión de socios</div>
-      <button class="admin-create-btn" style="width:auto;padding:.5rem 1rem;margin:0;font-size:.8rem" onclick="openSocioForm()">+ Nuevo</button>
-    </div>
+    <div class="section-title">Teléfono de un socio</div>
+    <p style="font-size:.8rem;color:var(--text-muted);margin:-.4rem 0 1rem">
+      Busca al socio y pulsa para ver su teléfono. Las altas y bajas se gestionan
+      desde la aplicación de Socios.
+    </p>
     <div style="position:relative;margin-bottom:1rem;">
       <input type="text" id="socio-search" placeholder="Buscar por nombre o nº…"
         style="width:100%;padding:.7rem .85rem;border:1px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.88rem;outline:none;background:#fff;"
@@ -684,23 +685,6 @@
   </div>
 </div>
 
-<!-- Modal socio -->
-<div class="modal-overlay" id="socio-modal">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <h3 id="socio-modal-title">Nuevo socio</h3>
-    <div class="form-row"><label>Número de socio</label><input type="text" id="sm-num" placeholder="Ej: 155" maxlength="6" inputmode="numeric"></div>
-    <div class="form-row"><label>Nombre</label><input type="text" id="sm-nombre" placeholder="Ej: Jon"></div>
-    <div class="form-row"><label>Apellidos</label><input type="text" id="sm-apellidos" placeholder="Ej: Urrutia Osa"></div>
-    <div class="form-row"><label>DNI</label><input type="text" id="sm-dni" placeholder="Ej: 12345678A" style="text-transform:uppercase"></div>
-    <div class="form-row"><label>Teléfono móvil (opcional)</label><input type="tel" id="sm-tel" placeholder="Ej: 619465576" inputmode="numeric" maxlength="9"></div>
-    <div id="sm-error" style="color:#ff6b6b;font-size:.78rem;margin-bottom:.5rem;display:none"></div>
-    <div class="modal-actions">
-      <button class="btn-back" onclick="closeSocioModal()">Cancelar</button>
-      <button class="btn-confirm" onclick="saveSocio()">Guardar</button>
-    </div>
-  </div>
-</div>
 
 <!-- PANEL SORTEOS (fullscreen overlay) -->
 <div id="sorteo-panel" style="display:none;position:fixed;inset:0;z-index:250;background:var(--cream);overflow-y:auto;">
@@ -849,7 +833,7 @@ const FILL={libre:'#2E86C1',occupied:'#B03020',mia:'#E67E22',bloqueado:'#3a3a3a'
 
 // ── ESTADO ───────────────────────────────────────────
 let cu=null, cDate=new Date(), cTurno='comida', selMesas=[], socioTel='', enModoQuiosco=false, kioskMode=false;
-let coms=8, adminComs=8, aFilter='todos', editingSocio=null;
+let coms=8, adminComs=8, aFilter='todos';
 let reservas=[]; // cargadas desde Supabase
 let calViewDate=new Date();
 
@@ -858,7 +842,7 @@ function getMesasActivas(){
   return [1,2,3,4,5];
 }
 function sN(id){const s=SOCIOS[id];return s?s.nombre+' '+s.apellidos:'';}
-function isAdmin(){return !!(SOCIOS[cu]?.admin);}
+function isAdmin(){return !!miAdmin;}
 function getRes(m,t,f){return reservas.find(r=>r.mesa===m&&r.turno===t&&r.fecha===f)||null;}
 
 // ── BLOQUEOS ENTRE TURNOS ───────────────────────────────────────────
@@ -934,7 +918,7 @@ function getSorteoDia(fecha){
 // Acepta `forceAdmin` para forzar el límite admin (60 días).
 function getMaxFecha(forceAdmin){
   const today=new Date();today.setHours(0,0,0,0);
-  const esAdminReal = !!(SOCIOS[cu]?.admin) || !!forceAdmin;
+  const esAdminReal = !!miAdmin || !!forceAdmin;
   const baseDias = esAdminReal ? 60 : 30;
   const maxD = new Date(today); maxD.setDate(today.getDate()+baseDias);
   return maxD;
@@ -966,16 +950,36 @@ function showLoading(msg='Cargando...'){
 function hideLoading(){document.getElementById('loading-overlay').classList.remove('show');}
 
 // ── LOGIN ────────────────────────────────────────────
+// Datos del socio que ha entrado. El DNI se guarda solo en memoria,
+// para poder demostrar ante el servidor quién pregunta.
+let miDni='', miAdmin=false;
+
+// Comprueba las credenciales EN EL SERVIDOR.
+// Devuelve la ficha del socio, o null si no coinciden.
+async function pedirLogin(num,dni){
+  const {data,error}=await sb.rpc('login_socio',{p_num:num,p_dni:dni});
+  if(error){console.error(error);return null;}
+  return (data&&data.length)?data[0]:null;
+}
+
 async function doLogin(){
   const u=document.getElementById('login-user').value.trim().padStart(3,'0');
   const p=document.getElementById('login-pass').value.trim().replace(/[^0-9]/g,'');
   const err=document.getElementById('login-error');
   const btn=document.getElementById('login-btn');
-  const s=SOCIOS[u];
-  if(!s||s.dni.replace(/[^0-9]/g,'')!==p){err.style.display='block';return;}
-  err.style.display='none';
+
   btn.innerHTML='<span class="spinner"></span>Entrando…';
   btn.disabled=true;
+
+  const s=await pedirLogin(u,p);
+  if(!s){
+    err.style.display='block';
+    btn.innerHTML='Entrar'; btn.disabled=false;
+    return;
+  }
+  err.style.display='none';
+  miDni=p; miAdmin=!!s.admin;
+  socioTel=s.tel||'';
   showLoading('Cargando reservas…');
   await loadReservas();
   await loadNotas();
@@ -1019,18 +1023,17 @@ function doLogout(){
 }
 
 // ── SUPABASE: CARGAR / CREAR / ELIMINAR RESERVAS ─────
+// Solo nombres. Ni DNI, ni teléfonos, ni quién es admin:
+// esos datos ya no salen de la base de datos al navegador.
 async function loadSocios(){
-  const {data,error}=await sb.from('socios').select('*');
+  const {data,error}=await sb.from('socios_publico').select('*');
   if(error){console.error(error);showToast('Error al cargar socios');return;}
   SOCIOS={};
   (data||[]).forEach(function(s){
     SOCIOS[s.socio_num]={
-      dni:s.dni||'',
       nombre:s.nombre||'',
       apellidos:s.apellidos||'',
-      initials:s.initials||'??',
-      tel:s.tel||'',
-      admin:s.admin||false
+      initials:s.initials||'??'
     };
   });
 }
@@ -1547,12 +1550,15 @@ async function doAdminCreate(){
 }
 
 // ── GESTIÓN SOCIOS ───────────────────────────────────
+// Teléfonos ya consultados en esta sesión, para no repetir llamadas
+let telCache={};
+
 function renderSociosList(){
   const q=(document.getElementById('socio-search')?.value||'').toLowerCase().trim();
-  const entries=Object.entries(SOCIOS).filter(([k,v])=>!v.admin)
+  const entries=Object.entries(SOCIOS)
     .filter(([k,v])=>!q||k.includes(q)||v.nombre.toLowerCase().includes(q)||v.apellidos.toLowerCase().includes(q))
     .sort((a,b)=>parseInt(a[0])-parseInt(b[0]));
-  const total=Object.values(SOCIOS).filter(v=>!v.admin).length;
+  const total=Object.keys(SOCIOS).length;
   const list=document.getElementById('socios-list');
   if(!entries.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">👥</div><p>No se encontraron socios.</p></div>';return;}
   list.innerHTML='<div style="font-size:.7rem;color:var(--text-muted);margin-bottom:.6rem">'+entries.length+' de '+total+' socios</div>'+
@@ -1561,78 +1567,44 @@ function renderSociosList(){
       '<div class="socio-num">'+parseInt(num)+'</div>'+
       '<div class="socio-info">'+
         '<div class="socio-name">'+s.nombre+' '+s.apellidos+'</div>'+
-        '<div class="socio-dni">DNI: '+s.dni+'</div>'+
-        (s.tel?'<div class="socio-dni" style="color:#27AE60">📞 '+s.tel+'</div>':'<div class="socio-dni" style="color:#bbb">Sin móvil</div>')+
+        '<div class="socio-dni" id="tel-'+num+'">'+
+          (telCache[num]!==undefined
+            ? (telCache[num]?'<span style="color:#27AE60">📞 '+telCache[num]+'</span>':'<span style="color:#bbb">Sin móvil</span>')
+            : '<span style="color:#bbb">—</span>')+
+        '</div>'+
       '</div>'+
       '<div class="socio-actions">'+
-      '<button class="btn-edit" onclick="openSocioForm(\''+num+'\')">Editar</button>'+
-      '<button class="btn-del" onclick="deleteSocio(\''+num+'\')">✕</button>'+
+      (telCache[num]===undefined
+        ? '<button class="btn-edit" onclick="verTelefono(\''+num+'\')">Ver teléfono</button>'
+        : (telCache[num]?'<a class="btn-edit" style="text-decoration:none;display:inline-block" href="tel:'+telCache[num]+'">Llamar</a>':''))+
       '</div></div>'
     ).join('');
 }
 
-function openSocioForm(num){
-  editingSocio=num||null;
-  document.getElementById('sm-error').style.display='none';
-  if(num&&SOCIOS[num]){
-    const s=SOCIOS[num];
-    document.getElementById('socio-modal-title').textContent='Editar socio';
-    document.getElementById('sm-num').value=parseInt(num);
-    document.getElementById('sm-num').readOnly=true;
-    document.getElementById('sm-num').style.opacity='.5';
-    document.getElementById('sm-nombre').value=s.nombre;
-    document.getElementById('sm-apellidos').value=s.apellidos;
-    document.getElementById('sm-dni').value=s.dni;
-    // Load tel from Supabase
-    sb.from('socios').select('tel').eq('socio_num',num).single().then(({data})=>{
-      document.getElementById('sm-tel').value=data&&data.tel?data.tel:'';
-    });
-  } else {
-    document.getElementById('socio-modal-title').textContent='Nuevo socio';
-    document.getElementById('sm-num').value='';
-    document.getElementById('sm-num').readOnly=false;
-    document.getElementById('sm-num').style.opacity='1';
-    document.getElementById('sm-nombre').value='';
-    document.getElementById('sm-apellidos').value='';
-    document.getElementById('sm-dni').value='';
-    document.getElementById('sm-tel').value='';
+// Pide UN teléfono al servidor. El servidor comprueba que quien
+// pregunta es administrador antes de devolverlo.
+async function verTelefono(num){
+  const celda=document.getElementById('tel-'+num);
+  if(celda) celda.innerHTML='<span style="color:#bbb">Consultando…</span>';
+  const {data,error}=await sb.rpc('tel_socio',
+    {p_num:num, p_solicitante:cu, p_dni:miDni});
+  if(error){
+    console.error(error);
+    showToast('No se ha podido consultar el teléfono');
+    if(celda) celda.innerHTML='<span style="color:#bbb">—</span>';
+    return;
   }
-  document.getElementById('socio-modal').classList.add('show');
+  if(!data||!data.length){
+    showToast('No tienes permiso para ver los teléfonos');
+    if(celda) celda.innerHTML='<span style="color:#bbb">—</span>';
+    return;
+  }
+  telCache[num]=data[0].tel||'';
+  renderSociosList();
 }
-function closeSocioModal(){document.getElementById('socio-modal').classList.remove('show');editingSocio=null;}
-async function saveSocio(){
-  const err=document.getElementById('sm-error');
-  const numRaw=document.getElementById('sm-num').value.trim();
-  const nombre=document.getElementById('sm-nombre').value.trim();
-  const apellidos=document.getElementById('sm-apellidos').value.trim();
-  const dni=document.getElementById('sm-dni').value.trim().toUpperCase();
-  if(!numRaw||!nombre||!dni){err.textContent='Número, nombre y DNI son obligatorios.';err.style.display='block';return;}
-  const num=String(parseInt(numRaw)).padStart(3,'0');
-  if(!editingSocio&&SOCIOS[num]){err.textContent='Ese número de socio ya existe.';err.style.display='block';return;}
-  const initials=((nombre[0]||'')+(apellidos.split(' ')[0]?.[0]||'')).toUpperCase();
-  const smTel=document.getElementById('sm-tel').value.replace(/\s/g,'');
-  const tel=(smTel&&(smTel.startsWith('6')||smTel.startsWith('7')))?smTel:'';
-  // Preservar el flag admin al editar (solo se asigna false en altas nuevas)
-  const adminFlag = editingSocio ? (SOCIOS[num]?.admin || false) : false;
-  // Guardar en Supabase
-  const {error}=await sb.from('socios').upsert({
-    socio_num:num, dni, nombre, apellidos,
-    initials:initials.slice(0,2)||'??',
-    tel:tel||null, admin:adminFlag
-  },{onConflict:'socio_num'});
-  if(error){showToast('Error al guardar socio');console.error(error);return;}
-  // Actualizar objeto local
-  SOCIOS[num]={dni,nombre,apellidos,initials:initials.slice(0,2)||'??',tel:tel||'',admin:adminFlag};
-  closeSocioModal();renderSociosList();
-  showToast(editingSocio?'✓ Socio actualizado':'✓ Socio añadido');
-}
-async function deleteSocio(num){
-  const s=SOCIOS[num];
-  if(!confirm('¿Eliminar a '+s.nombre+' '+s.apellidos+' (nº '+parseInt(num)+')?'))return;
-  const {error}=await sb.from('socios').delete().eq('socio_num',num);
-  if(error){showToast('Error al eliminar socio');console.error(error);return;}
-  delete SOCIOS[num];renderSociosList();showToast('Socio eliminado');
-}
+
+// La gestión de socios (altas, bajas, edición) vive ahora en la
+// aplicación de Socios. Aquí solo se consultan teléfonos.
 
 // ── TABS ─────────────────────────────────────────────
 function switchTab(tab){
@@ -1808,11 +1780,11 @@ function closeKioskLogin(){
   document.getElementById('kiosk-login-overlay').classList.remove('show');
 }
 
-function doKioskLogin(){
+async function doKioskLogin(){
   const u=document.getElementById('kiosk-user').value.trim().padStart(3,'0');
   const p=document.getElementById('kiosk-pass').value.trim().replace(/[^0-9]/g,'');
-  const s=SOCIOS[u];
-  if(!s||(s.dni||'').replace(/[^0-9]/g,'')!==p){
+  const s=await pedirLogin(u,p);
+  if(!s){
     document.getElementById('kiosk-error').style.display='block';return;
   }
   closeKioskLogin();
@@ -1985,19 +1957,21 @@ function pickKioskCalDay(ds){
 // -- TELEFONOS SOCIOS ------------------------------------
 async function loadSocioTel(){
   if(!cu)return;
-  const {data}=await sb.from('socios').select('tel').eq('socio_num',cu).single();
-  if(data&&data.tel){
-    socioTel=data.tel;
+  const {data,error}=await sb.rpc('get_mi_tel',{p_num:cu,p_dni:miDni});
+  if(error){console.error(error);return;}
+  if(data){
+    socioTel=data;
     const f=document.getElementById('f-tel');
-    if(f) f.value=data.tel;
+    if(f) f.value=data;
   }
 }
 async function saveSocioTel(tel){
   if(!tel||!tel.trim())return;
-  // Only save mobile numbers
+  // Solo se guardan móviles
   const t=tel.replace(/\s/g,'');
   if(!t.startsWith('6')&&!t.startsWith('7'))return;
-  await sb.from('socios').upsert({socio_num:cu,tel:t},{onConflict:'socio_num'});
+  const {error}=await sb.rpc('set_mi_tel',{p_num:cu,p_dni:miDni,p_tel:t});
+  if(error){console.error(error);showToast('No se ha podido guardar el teléfono');return;}
   socioTel=t;
 }
 // ── NOTAS DE GASTO ─────────────────────────────────────
