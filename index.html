@@ -219,7 +219,9 @@
 
   /* Two equal columns */
   .kiosk-center{width:50%;background:#ffffff;display:flex;flex-direction:column;padding:2.5rem 3rem;border-right:1px solid #e0e4ea;overflow-y:auto;}
-  .kiosk-right{width:50%;background:#f8fafd;display:flex;flex-direction:column;padding:1.25rem 2rem;overflow:hidden;gap:.4rem;}
+  .kiosk-right{width:50%;background:#f8fafd;display:flex;flex-direction:column;padding:1.25rem 2rem;overflow-y:auto;gap:.4rem;}
+  .kiosk-turnos-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;align-content:start;}
+  @media (max-width:900px){.kiosk-turnos-grid{grid-template-columns:1fr;}}
 
   /* Header */
   .kiosk-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-shrink:0;}
@@ -1364,7 +1366,6 @@ function openConfirm(){
   const mesasConAviso = selMesas.filter(m => avisoBloqueo(m, cTurno, f) !== null);
   let avisoHtml = '';
   const avisos = mesasConAviso.map(m => (selMesas.length > 1 ? '<strong>Mesa '+m+':</strong> ' : '') + avisoBloqueo(m, cTurno, f));
-  if(cTurno === 'almuerzo') avisos.unshift('El almuerzo termina a las 12:00: la mesa debe quedar libre y recogida antes de esa hora.');
   if(avisos.length > 0){
     avisoHtml = '<div style="margin-top:.65rem;padding:.6rem .75rem;background:rgba(212,172,13,.12);border:1px solid rgba(212,172,13,.5);border-radius:8px;font-size:.82rem;color:#D4AC0D;line-height:1.5;">'+
       '⚠️ <strong>Atención:</strong> ' + avisos.join('<br>') +
@@ -1812,7 +1813,7 @@ function renderKioskRight(){
   document.getElementById('kiosk-right').innerHTML=
     '<div class="kiosk-right-header">Estado de mesas</div>'+
     '<div class="kiosk-right-subheader">'+dateLabel+'</div>'+
-    sections;
+    '<div class="kiosk-turnos-grid">'+sections+'</div>';
 }
 
 function openKioskLogin(){
