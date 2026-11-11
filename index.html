@@ -559,6 +559,7 @@
       </div>
     </div>
     <div class="turno-bar">
+      <button class="turno-btn" onclick="selTurno('almuerzo',this)">🥖 Almuerzo</button>
       <button class="turno-btn active" onclick="selTurno('comida',this)">🍽️ Comida</button>
       <button class="turno-btn" onclick="selTurno('merienda',this)">☕ Merienda</button>
       <button class="turno-btn" onclick="selTurno('cena',this)">🌙 Cena</button>
@@ -612,6 +613,7 @@
     <div class="section-title">Filtrar por turno</div>
     <div class="admin-filters">
       <div class="filter-chip active" onclick="setFilter('todos',this)">Todos</div>
+      <div class="filter-chip" onclick="setFilter('almuerzo',this)">🥖 Almuerzo</div>
       <div class="filter-chip" onclick="setFilter('comida',this)">🍽️ Comida</div>
       <div class="filter-chip" onclick="setFilter('merienda',this)">☕ Merienda</div>
       <div class="filter-chip" onclick="setFilter('cena',this)">🌙 Cena</div>
@@ -660,6 +662,7 @@
     <div class="form-row"><label>Fecha</label><input type="date" id="ac-fecha"></div>
     <div class="form-row"><label>Turno</label>
       <select id="ac-turno">
+        <option value="almuerzo">🥖 Almuerzo</option>
         <option value="comida">🍽️ Comida</option>
         <option value="merienda">☕ Merienda</option>
         <option value="cena">🌙 Cena</option>
@@ -824,7 +827,7 @@ let SOCIOS={};
 const DIAS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const MESES_C=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-const TL={comida:'Comida 🍽️',merienda:'Merienda ☕',cena:'Cena 🌙'};
+const TL={almuerzo:'Almuerzo 🥖',comida:'Comida 🍽️',merienda:'Merienda ☕',cena:'Cena 🌙'};
 const COL={libre:'#27AE60',occupied:'#C0392B',mia:'#CA6F1E',bloqueado:'#666',aviso:'#D4AC0D'};
 const MESA_MAX={1:9,2:9,3:9,4:11,5:12};
 const MESA_EXTERIOR=5;
@@ -847,13 +850,15 @@ function getRes(m,t,f){return reservas.find(r=>r.mesa===m&&r.turno===t&&r.fecha=
 
 // ── BLOQUEOS ENTRE TURNOS ───────────────────────────────────────────
 // Si en una misma mesa y día hay reserva en un turno, ¿qué pasa con los demás?
-//   comida   → bloquea merienda (la sobremesa puede alargarse)
+//   almuerzo → comida con aviso (la mesa debe quedar libre y recogida antes de las 12:00)
+//   comida   → almuerzo con aviso (12:00) · bloquea merienda (la sobremesa puede alargarse)
 //   merienda → comida con aviso (libre y recogida a las 17:00)
 //   cena     → independiente, no afecta ni le afectan
 const BLOQUEOS_TURNO = {
-  comida:   { merienda: 'bloqueado', cena: 'libre' },
-  merienda: { comida:   'aviso',     cena: 'libre' },
-  cena:     { comida:   'libre',     merienda: 'libre' }
+  almuerzo: { comida:   'aviso',     merienda: 'libre',     cena: 'libre' },
+  comida:   { almuerzo: 'aviso',     merienda: 'bloqueado', cena: 'libre' },
+  merienda: { almuerzo: 'libre',     comida:   'aviso',     cena: 'libre' },
+  cena:     { almuerzo: 'libre',     comida:   'libre',     merienda: 'libre' }
 };
 
 // Devuelve 'bloqueado' | 'aviso' | 'libre' según los demás turnos reservados
@@ -880,11 +885,29 @@ function estadoBloqueo(mesa, turno, fecha){
 // Mensaje legible del aviso para mostrar al socio
 function avisoBloqueo(mesa, turno, fecha){
   const otros = reservas.filter(r => r.mesa === mesa && r.fecha === fecha && r.turno !== turno);
-  const tieneMerienda = otros.some(r => r.turno === 'merienda');
-  if(turno === 'comida' && tieneMerienda){
-    return 'Hay una merienda reservada en esta mesa. Debes dejarla libre y recogida antes de las 17:00.';
+  const tiene = t => otros.some(r => r.turno === t);
+  const msgs = [];
+  if(turno === 'almuerzo' && tiene('comida')){
+    msgs.push('Hay una comida reservada en esta mesa. Debes dejarla libre y recogida antes de las 12:00.');
   }
-  return null;
+  if(turno === 'comida' && tiene('almuerzo')){
+    msgs.push('Hay un almuerzo reservado en esta mesa. Quedará libre a las 12:00.');
+  }
+  if(turno === 'comida' && tiene('merienda')){
+    msgs.push('Hay una merienda reservada en esta mesa. Debes dejarla libre y recogida antes de las 17:00.');
+  }
+  return msgs.length ? msgs.join(' ') : null;
+}
+
+// Texto corto para el plano cuando una mesa libre está en estado 'aviso'
+function etiquetaAviso(mesa, turno, fecha){
+  if(turno === 'almuerzo') return 'Libre 12:00';
+  const otros = reservas.filter(r => r.mesa === mesa && r.fecha === fecha && r.turno !== turno);
+  const alm = otros.some(r => r.turno === 'almuerzo');
+  const mer = otros.some(r => r.turno === 'merienda');
+  if(turno === 'comida' && alm && mer) return '12:00–17:00';
+  if(turno === 'comida' && alm) return 'Desde 12:00';
+  return 'Libre 17:00';
 }
 
 // Devuelve el sorteo no realizado para esa fecha+turno (o null si no es día de sorteo)
@@ -1229,7 +1252,7 @@ function renderFloor(){
         cursor = 'not-allowed';
       } else if(libre && bloqueo === 'aviso'){
         fillC = FILL.aviso; strokeC = isSel ? '#fff' : COL.aviso;
-        sub = isSel ? '✓ Seleccionada · ⚠️ Libre 17:00' : '⚠️ Libre 17:00';
+        sub = (isSel ? '✓ Seleccionada · ' : '') + '⚠️ ' + etiquetaAviso(id, cTurno, f);
         cursor = 'pointer';
       } else if(libre){
         fillC = FILL.libre; strokeC = isSel ? '#fff' : COL.libre;
@@ -1340,11 +1363,11 @@ function openConfirm(){
   const f = fmt(cDate);
   const mesasConAviso = selMesas.filter(m => avisoBloqueo(m, cTurno, f) !== null);
   let avisoHtml = '';
-  if(mesasConAviso.length > 0){
+  const avisos = mesasConAviso.map(m => (selMesas.length > 1 ? '<strong>Mesa '+m+':</strong> ' : '') + avisoBloqueo(m, cTurno, f));
+  if(cTurno === 'almuerzo') avisos.unshift('El almuerzo termina a las 12:00: la mesa debe quedar libre y recogida antes de esa hora.');
+  if(avisos.length > 0){
     avisoHtml = '<div style="margin-top:.65rem;padding:.6rem .75rem;background:rgba(212,172,13,.12);border:1px solid rgba(212,172,13,.5);border-radius:8px;font-size:.82rem;color:#D4AC0D;line-height:1.5;">'+
-      '⚠️ <strong>Atención:</strong> Hay una merienda reservada en '+
-      (mesasConAviso.length === 1 ? 'la Mesa '+mesasConAviso[0] : 'las Mesas '+mesasConAviso.join(' y '))+
-      '. Debes dejar'+(mesasConAviso.length === 1 ? 'la' : 'las')+' libre'+(mesasConAviso.length === 1 ? '' : 's')+' y recogida'+(mesasConAviso.length === 1 ? '' : 's')+' antes de las 17:00.'+
+      '⚠️ <strong>Atención:</strong> ' + avisos.join('<br>') +
       '</div>';
   }
   document.getElementById('modal-summary').innerHTML=
@@ -1424,7 +1447,7 @@ function groupReservas(list){
 
 function renderMisReservas(){
   const today=fmt(new Date());
-  const TURNO_ORDER=['comida','merienda','cena'];
+  const TURNO_ORDER=['almuerzo','comida','merienda','cena'];
   const sortFn=(a,b)=>a[0].fecha.localeCompare(b[0].fecha)||TURNO_ORDER.indexOf(a[0].turno)-TURNO_ORDER.indexOf(b[0].turno);
   const proximas=reservas.filter(r=>r.socio_num===cu&&r.fecha>=today).sort((a,b)=>a.fecha.localeCompare(b.fecha)||TURNO_ORDER.indexOf(a.turno)-TURNO_ORDER.indexOf(b.turno));
   const list=document.getElementById('mis-reservas-list');
@@ -1508,7 +1531,7 @@ function setFilter(f,el){
 }
 function renderAdminPanel(){
   const today=fmt(new Date());
-  const prox=reservas.filter(r=>r.fecha>=today).sort((a,b)=>a.fecha.localeCompare(b.fecha)||['comida','merienda','cena'].indexOf(a.turno)-['comida','merienda','cena'].indexOf(b.turno));
+  const prox=reservas.filter(r=>r.fecha>=today).sort((a,b)=>a.fecha.localeCompare(b.fecha)||['almuerzo','comida','merienda','cena'].indexOf(a.turno)-['almuerzo','comida','merienda','cena'].indexOf(b.turno));
   document.getElementById('admin-stats').innerHTML=
     '<div class="stat-card"><div class="stat-num">'+prox.length+'</div><div class="stat-label">Reservas</div></div>'+
     '<div class="stat-card"><div class="stat-num">'+new Set(prox.map(r=>r.mesa)).size+'/4</div><div class="stat-label">Mesas</div></div>'+
@@ -1654,7 +1677,7 @@ function enterKiosk(){
   kioskDate=new Date();kioskDate.setHours(0,0,0,0);
   // Set default turno based on current hour
   const h=new Date().getHours();
-  kioskTurno=h<15?'comida':h<19?'merienda':'cena';
+  kioskTurno=h<12?'almuerzo':h<15?'comida':h<19?'merienda':'cena';
   // Highlight correct turno button
   document.querySelectorAll('.kiosk-center-turno-btn').forEach(function(btn){
     const t=btn.getAttribute('onclick').match(/'(\w+)'/)?.[1];
@@ -1730,7 +1753,7 @@ function renderKioskFloor(){
     } else if(libre && bloqueo === 'aviso'){
       bg.setAttribute('fill', FILL.aviso);
       bg.setAttribute('stroke', COL.aviso);
-      sub.textContent = '⚠️ Libre 17:00';
+      sub.textContent = '⚠️ ' + etiquetaAviso(id, turno, f);
     } else if(libre){
       bg.setAttribute('fill', FILL.libre);
       bg.setAttribute('stroke', COL.libre);
@@ -1751,6 +1774,7 @@ function renderKioskRight(){
   const dateLabel=(isToday?'Hoy · ':'')+DIAS[kd.getDay()]+', '+kd.getDate()+' de '+MESES[kd.getMonth()]+' '+kd.getFullYear();
 
   const turnos=[
+    {key:'almuerzo',label:'Almuerzo',icon:'🥖'},
     {key:'comida',label:'Comida',icon:'🍽️'},
     {key:'merienda',label:'Merienda',icon:'☕'},
     {key:'cena',label:'Cena',icon:'🌙'}
@@ -1769,7 +1793,7 @@ function renderKioskRight(){
       } else if(bloqueo === 'bloqueado'){
         info = '<span class="kiosk-mesa-status ocupada" style="background:#3a3a3a;color:#ccc;">No disponible</span>';
       } else if(bloqueo === 'aviso'){
-        info = '<span class="kiosk-mesa-status libre" style="background:rgba(212,172,13,.15);color:#D4AC0D;">⚠️ Libre 17:00</span>';
+        info = '<span class="kiosk-mesa-status libre" style="background:rgba(212,172,13,.15);color:#D4AC0D;">⚠️ '+etiquetaAviso(id, t.key, f)+'</span>';
       } else {
         info = '<span class="kiosk-mesa-status libre">Libre</span>';
       }
@@ -2036,7 +2060,7 @@ function _paintNotas(mias,list){
         '<span style="color:var(--text-muted)">'+fmt2(l.subtotal)+'€</span>'+
       '</div>';
     });
-    const turnoLabel=n.turno==='comida'?'🍽️ Comida':n.turno==='merienda'?'☕ Merienda':n.turno==='cena'?'🌙 Cena':'';
+    const turnoLabel=n.turno==='almuerzo'?'🥖 Almuerzo':n.turno==='comida'?'🍽️ Comida':n.turno==='merienda'?'☕ Merienda':n.turno==='cena'?'🌙 Cena':'';
     const nid='n'+idx;
     html+='<div class="nota-item">'+
       '<div class="nota-header" data-nid="'+nid+'" onclick="toggleNota(this.dataset.nid)">'+
@@ -2105,8 +2129,8 @@ async function enterLimpieza(){
 }
 
 function renderLimpieza(todas, today, maxD){
-  const TURNOS = ['comida','merienda','cena'];
-  const TL2 = {comida:'🍽️ Comida',merienda:'☕ Merienda',cena:'🌙 Cena'};
+  const TURNOS = ['almuerzo','comida','merienda','cena'];
+  const TL2 = {almuerzo:'🥖 Almuerzo',comida:'🍽️ Comida',merienda:'☕ Merienda',cena:'🌙 Cena'};
   let html = '';
   let d = new Date(today);
   while(d <= maxD){
