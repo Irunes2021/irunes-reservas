@@ -4,7 +4,7 @@
 //  una versión nueva del index.html a GitHub.
 //  Ejemplo: 'v2', 'v3', 'v4'...
 // ═══════════════════════════════════════════════════
-const VERSION = 'v1';
+const VERSION = 'v2';
 
 // Instalación: no precachea nada, deja que el fetch lo haga
 self.addEventListener('install', () => {
