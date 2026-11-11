@@ -852,12 +852,12 @@ function getRes(m,t,f){return reservas.find(r=>r.mesa===m&&r.turno===t&&r.fecha=
 
 // ── BLOQUEOS ENTRE TURNOS ───────────────────────────────────────────
 // Si en una misma mesa y día hay reserva en un turno, ¿qué pasa con los demás?
-//   almuerzo → comida con aviso (la mesa debe quedar libre y recogida antes de las 12:00)
-//   comida   → almuerzo con aviso (12:00) · bloquea merienda (la sobremesa puede alargarse)
+//   almuerzo → no afecta a comida (el almuerzo deja la mesa libre antes de las 12:00)
+//   comida   → almuerzo con aviso (libre y recogida antes de las 12:00) · bloquea merienda (la sobremesa puede alargarse)
 //   merienda → comida con aviso (libre y recogida a las 17:00)
 //   cena     → independiente, no afecta ni le afectan
 const BLOQUEOS_TURNO = {
-  almuerzo: { comida:   'aviso',     merienda: 'libre',     cena: 'libre' },
+  almuerzo: { comida:   'libre',     merienda: 'libre',     cena: 'libre' },
   comida:   { almuerzo: 'aviso',     merienda: 'bloqueado', cena: 'libre' },
   merienda: { almuerzo: 'libre',     comida:   'aviso',     cena: 'libre' },
   cena:     { almuerzo: 'libre',     comida:   'libre',     merienda: 'libre' }
@@ -892,9 +892,6 @@ function avisoBloqueo(mesa, turno, fecha){
   if(turno === 'almuerzo' && tiene('comida')){
     msgs.push('Hay una comida reservada en esta mesa. Debes dejarla libre y recogida antes de las 12:00.');
   }
-  if(turno === 'comida' && tiene('almuerzo')){
-    msgs.push('Hay un almuerzo reservado en esta mesa. Quedará libre a las 12:00.');
-  }
   if(turno === 'comida' && tiene('merienda')){
     msgs.push('Hay una merienda reservada en esta mesa. Debes dejarla libre y recogida antes de las 17:00.');
   }
@@ -904,11 +901,6 @@ function avisoBloqueo(mesa, turno, fecha){
 // Texto corto para el plano cuando una mesa libre está en estado 'aviso'
 function etiquetaAviso(mesa, turno, fecha){
   if(turno === 'almuerzo') return 'Libre 12:00';
-  const otros = reservas.filter(r => r.mesa === mesa && r.fecha === fecha && r.turno !== turno);
-  const alm = otros.some(r => r.turno === 'almuerzo');
-  const mer = otros.some(r => r.turno === 'merienda');
-  if(turno === 'comida' && alm && mer) return '12:00–17:00';
-  if(turno === 'comida' && alm) return 'Desde 12:00';
   return 'Libre 17:00';
 }
 
